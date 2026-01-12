@@ -46,11 +46,21 @@ function bindPointerButton(id, onDown, onUp = onDown) {
   const el = document.getElementById(id);
   if (!el) return;
 
+  let repeatInterval = null;
+
   el.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     el.setPointerCapture(e.pointerId);
-    onDown();
+    onDown(); // immediate move
+    repeatInterval = setInterval(onDown, MOVE_COOLDOWN);
   });
+
+  function stop() {
+    if (repeatInterval) {
+      clearInterval(repeatInterval);
+      repeatInterval = null;
+    }
+  }
 
   el.addEventListener("pointerup", (e) => {
     e.preventDefault();
