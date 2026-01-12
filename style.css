@@ -506,7 +506,6 @@ main {
   -ms-user-select: none;
   transition: opacity 0.3s ease;
   margin-bottom: 40px;
-  opacity: .6;
 }
 
 #up-btn {
@@ -987,20 +986,20 @@ button.purple:active {
     font-size: 10px;
   }
   header, #livestats,  #life-canvas {
-    transform: scale(0.65);
+    transform: scale(0.6);
   }
   main {
     position: fixed;
   }
   #touch-controls {
     position: fixed;
-    bottom: 40px
+    bottom: 30px
   }
   #controls {
-    transform: scale(.75);
+    transform: scale(.7);
     position: fixed;
     margin-bottom: 0;
-    bottom: 10px
+    bottom: 8px
   }
   #livestats {
     position: fixed;
