@@ -118,6 +118,8 @@ button,
   display: flex;
   flex-direction: columns;
   justify-content: space-between;
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
 }
 
 #score-display,
