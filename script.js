@@ -497,8 +497,7 @@ let activeTimeouts = [];
 let canPlayGame = false;
 
 function getTotalScore() {
-  const collectedCount = collectibles.filter((c) => c.collected).length;
-  return collectedCount + generation;
+  return score + generation;
 }
 
 canPlayGame = sessionStorage.getItem("turtleCanPlay") === "true";
