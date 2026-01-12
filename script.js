@@ -830,7 +830,7 @@ function closeModal(modalId) {
   document.getElementById(modalId).classList.remove("show");
 }
 
-function showGameOver(won, reason = "") {
+function showGameOver(reason = "") {
   const title = document.getElementById("game-over-title");
   const message = document.getElementById("game-over-message");
   const answerDiv = document.getElementById("game-over-answer");
@@ -838,14 +838,9 @@ function showGameOver(won, reason = "") {
   canPlayGame = false;
   sessionStorage.removeItem("conpacCanPlay");
 
-  if (won) {
-    message.textContent = reason || `Survived ${generation} generations`;
-    answerDiv.innerHTML = "";
-  } else {
     title.textContent = "☠️ Extinction Event ☠️";
     message.textContent = reason || "All life died out";
     answerDiv.innerHTML = "";
-  }
 
   showModal("game-over-modal");
 }
@@ -853,7 +848,6 @@ function showGameOver(won, reason = "") {
 async function loadStats() {
   let stats = {
     played: 0,
-    won: 0,
     current_streak: 0,
     max_streak: 0,
   };
@@ -875,18 +869,13 @@ async function loadStats() {
   }
 
   document.getElementById("played").textContent = stats.played;
-  document.getElementById("win-rate").textContent = stats.played
-    ? Math.round((stats.won / stats.played) * 100)
-    : 0;
   document.getElementById("current-streak").textContent = stats.current_streak;
   document.getElementById("max-streak").textContent = stats.max_streak;
 }
 
-async function updateStats(won) {
+async function updateStats() {
   const userId = localStorage.getItem("conpacUserId");
   if (!userId) return;
-
-  const body = { won };
 
   try {
     await fetch(
@@ -905,19 +894,14 @@ async function updateStats(won) {
   const statsKey = "conpacStats";
   const stats = JSON.parse(localStorage.getItem(statsKey)) || {
     played: 0,
-    won: 0,
     current_streak: 0,
     max_streak: 0,
   };
 
   stats.played++;
-  if (won) {
-    stats.won++;
-    stats.current_streak++;
-    stats.max_streak = Math.max(stats.max_streak, stats.current_streak);
-  } else {
-    stats.current_streak = 0;
-  }
+
+  stats.current_streak = 0;
+
 
   localStorage.setItem(statsKey, JSON.stringify(stats));
 
@@ -929,11 +913,11 @@ function pauseLife() {
   clearInterval(lifeInterval);
 }
 
-function endGame(reason, won = false) {
+function endGame(reason = false) {
   pauseLife();
   gameOver = true;
-  updateStats(won);
-  showGameOver(won, `${reason} Score: ${getTotalScore()}`);
+  updateStats();
+  showGameOver(`${reason} Score: ${getTotalScore()}`);
 }
 
 document.getElementById("username-submit").onclick = async () => {
@@ -1004,7 +988,7 @@ async function renderLeaderboard() {
     <div class="leaderboard-number">#</div>
     <div>Player</div>
     <div class="leaderboard-stats-header">
-      🔥 Streak · Win% · 🏆 Won
+      🔥 Streak
     </div>
   </div>
 `;
@@ -1023,7 +1007,6 @@ async function renderLeaderboard() {
       return;
     }
 
-    // Sort by games won descending
     data.sort((a, b) => {
       if (b.max_streak !== a.max_streak) return b.max_streak - a.max_streak;
       return b.win_rate - a.win_rate;
@@ -1045,7 +1028,7 @@ async function renderLeaderboard() {
   <div class="leaderboard-rank">${i + 1}</div>
   <div class="leaderboard-name">${u.username}</div>
   <div class="leaderboard-stats">
-    ${u.max_streak} in a row · ${u.win_rate}% · ${u.won} wins
+    ${u.max_streak} in a row
   </div>
 `;
 
