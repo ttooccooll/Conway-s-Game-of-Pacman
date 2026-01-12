@@ -177,7 +177,6 @@ function placeGlider() {
   }
 
   showMessage("⚡ A glider has entered the arena! Watch it soar!", 3000);
-  console.log("Glider placed at", gx, gy);
   return true;
 }
 
