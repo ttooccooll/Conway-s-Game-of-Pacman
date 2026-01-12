@@ -54,12 +54,12 @@ header h1 {
   font-weight: 700;
   letter-spacing: 0.05em;
   color: #c88fff;
-  text-shadow: 0 0 10px #c88fff, 0 0 20px #7b68ee;
+  text-shadow: 0 0 20px #c88fff, 0 0 40px #7b68ee;
 }
 
 strong {
   color: #df3479ff;
-  text-shadow: 0 0 10px #df339aff, 0 0 20px #c8276dff;
+  text-shadow: 0 0 20px #df339aff, 0 0 40px #c8276dff;
 }
 
 #username-btn,
@@ -67,7 +67,7 @@ strong {
 #stats-btn {
     font-weight: 700;
   position: absolute;
-  color: #7abd6cff;
+  color: #81ea6cff;
   text-shadow: 0 0 20px #87fd7aff, 0 0 40px #76c818ff;
 }
 
@@ -91,7 +91,7 @@ button,
 .icon-button {
   font-family: MyFontb;
   color: #c88fff;
-  text-shadow: 0 0 10px #c88fff, 0 0 20px #7b68ee;
+  text-shadow: 0 0 20px #c88fff, 0 0 40px #7b68ee;
   background: none;
   border: none;
   cursor: pointer;
