@@ -8,6 +8,7 @@ let grid = [];
 let running = false;
 let generation = 0;
 let lifeInterval = null;
+let activePointerInterval = null;
 
 let playerX = Math.floor(GRID_SIZE / 2);
 let playerY = Math.floor(GRID_SIZE / 2);
@@ -42,25 +43,37 @@ function safeMovePlayer(dx, dy, dir) {
   movePlayer(dx, dy, dir);
 }
 
-function bindPointerButton(id, onDown, onUp = onDown) {
+function bindPointerButton(id, onDown) {
   const el = document.getElementById(id);
   if (!el) return;
 
   el.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     el.setPointerCapture(e.pointerId);
-    onDown();
-  });
+    stopPointerMovement();
+    onDown(); // immediate move
 
-  el.addEventListener("pointerup", (e) => {
-    e.preventDefault();
-    onUp();
-    el.releasePointerCapture(e.pointerId);
+    activePointerInterval = setInterval(onDown, 50);
   });
-
-  el.addEventListener("pointercancel", onUp);
-  el.addEventListener("pointerleave", onUp);
 }
+
+function stopPointerMovement() {
+  if (activePointerInterval) {
+    clearInterval(activePointerInterval);
+    activePointerInterval = null;
+  }
+
+  // 🔧 ADD THIS (safe even if nothing is captured)
+  if (document.pointerLockElement) {
+    document.exitPointerLock();
+  }
+}
+
+// These behave like keyup
+document.addEventListener("pointerup", stopPointerMovement);
+document.addEventListener("pointercancel", stopPointerMovement);
+document.addEventListener("touchend", stopPointerMovement);
+document.addEventListener("mouseup", stopPointerMovement);
 
 bindPointerButton("up-btn", () => {
   if (!running) startLife();
