@@ -49,19 +49,26 @@ header {
 }
 
 header h1 {
-  font-size: 26px;
+  font-size: 2rem;
+  font-family: MyFontb;
   font-weight: 700;
   letter-spacing: 0.05em;
   color: #c88fff;
   text-shadow: 0 0 10px #c88fff, 0 0 20px #7b68ee;
 }
 
+strong {
+  color: #df3479ff;
+  text-shadow: 0 0 10px #df339aff, 0 0 20px #c8276dff;
+}
+
 #username-btn,
 #help-btn,
 #stats-btn {
+    font-weight: 700;
   position: absolute;
-  color: #e0e0ff;
-  text-shadow: 0 0 5px #7b68ee;
+  color: #7abd6cff;
+  text-shadow: 0 0 20px #87fd7aff, 0 0 40px #76c818ff;
 }
 
 #username-btn {
@@ -82,12 +89,14 @@ button,
 }
 
 .icon-button {
+  font-family: MyFontb;
+  color: #c88fff;
+  text-shadow: 0 0 10px #c88fff, 0 0 20px #7b68ee;
   background: none;
   border: none;
-  color: #e0e0ff;
   cursor: pointer;
   padding: 8px;
-  font-size: 16px;
+  font-size: 18px;
   transition: transform 0.2s, text-shadow 0.2s;
 }
 
@@ -114,6 +123,8 @@ button,
 #score-display,
 #gen-display,
 #bit-display {
+  letter-spacing: 0.05em;
+  font-size: 1.7rem;
   font-family: MyFontb;
   color: #c88fff;
   text-shadow: 0 0 10px #c88fff, 0 0 20px #7b68ee;
