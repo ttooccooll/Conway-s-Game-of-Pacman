@@ -506,6 +506,7 @@ main {
   -ms-user-select: none;
   transition: opacity 0.3s ease;
   margin-bottom: 40px;
+  opacity: .6;
 }
 
 #up-btn {
