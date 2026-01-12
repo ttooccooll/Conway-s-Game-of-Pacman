@@ -46,21 +46,11 @@ function bindPointerButton(id, onDown, onUp = onDown) {
   const el = document.getElementById(id);
   if (!el) return;
 
-  let repeatInterval = null;
-
   el.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     el.setPointerCapture(e.pointerId);
-    onDown(); // immediate move
-    repeatInterval = setInterval(onDown, MOVE_COOLDOWN);
+    onDown();
   });
-
-  function stop() {
-    if (repeatInterval) {
-      clearInterval(repeatInterval);
-      repeatInterval = null;
-    }
-  }
 
   el.addEventListener("pointerup", (e) => {
     e.preventDefault();
@@ -569,9 +559,9 @@ function updateScoreDisplay() {
   const genEl = document.getElementById("gen-display");
   const bitEl = document.getElementById("bit-display");
   if (!scoreEl) return;
-  scoreEl.textContent = `Total:  ${getTotalScore()}`;
-  genEl.textContent = `Generations Survived:  ${generation}`;
-  bitEl.textContent = `Bitcoin:  ${score}`;
+  scoreEl.innerHTML = `Total: <strong>${getTotalScore()}</strong>`;
+  genEl.innerHTML = `Generations: <strong>${generation}</strong>`;
+  bitEl.innerHTML = `Bitcoin: <strong>${score}</strong>`;
 }
 
 async function startNewGame() {
