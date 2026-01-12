@@ -985,8 +985,11 @@ button.purple:active {
     min-width: 50px;
     font-size: 10px;
   }
-  header, #livestats,  #life-canvas {
+  #livestats,  #life-canvas {
     transform: scale(0.6);
+  }
+  header {
+    display: none;
   }
   main {
     position: fixed;
@@ -1001,9 +1004,12 @@ button.purple:active {
     margin-bottom: 0;
     bottom: 8px
   }
+  #life-canvas {
+    margin-top: -30px
+  }
   #livestats {
     position: fixed;
-    top: 60px
+    top: 10px
   }
 }
 
