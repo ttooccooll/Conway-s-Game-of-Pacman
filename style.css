@@ -986,7 +986,7 @@ button.purple:active {
     font-size: 10px;
   }
   #livestats,  #life-canvas {
-    transform: scale(0.6);
+    transform: scale(0.62);
   }
   header {
     display: none;
