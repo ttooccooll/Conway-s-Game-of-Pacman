@@ -996,13 +996,14 @@ button.purple:active {
   }
   #touch-controls {
     position: fixed;
-    bottom: 30px
+    bottom: 5px
   }
   #controls {
     transform: scale(.7);
     position: fixed;
     margin-bottom: 0;
-    bottom: 8px
+    bottom: 8px;
+    display: none;
   }
   #life-canvas {
     margin-top: -30px
