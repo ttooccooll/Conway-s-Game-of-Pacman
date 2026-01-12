@@ -118,8 +118,13 @@ button,
   display: flex;
   flex-direction: columns;
   justify-content: space-between;
-  font-variant-numeric: tabular-nums;
+}
+
+#livestats strong {
   display: inline-block;
+  min-width: 3ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 #score-display,
