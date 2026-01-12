@@ -63,13 +63,11 @@ function stopPointerMovement() {
     activePointerInterval = null;
   }
 
-  // 🔧 ADD THIS (safe even if nothing is captured)
   if (document.pointerLockElement) {
     document.exitPointerLock();
   }
 }
 
-// These behave like keyup
 document.addEventListener("pointerup", stopPointerMovement);
 document.addEventListener("pointercancel", stopPointerMovement);
 document.addEventListener("touchend", stopPointerMovement);
@@ -136,7 +134,7 @@ function initGhosts() {
     "#ff00ff",
     "#00ffff",
     "#ffaa00",
-  ]; // pick as many as you like
+  ];
 
   while (placed < NUM_GHOSTS) {
     const x = Math.floor(Math.random() * GRID_SIZE);
