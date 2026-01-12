@@ -996,7 +996,8 @@ button.purple:active {
   }
   #touch-controls {
     position: fixed;
-    bottom: 5px
+    margin-bottom: 0;
+    bottom: 10px
   }
   #controls {
     transform: scale(.7);
