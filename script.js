@@ -988,7 +988,7 @@ function movePlayer(dx, dy, dir) {
   for (const c of collectibles) {
     if (!c.collected && c.x === playerX && c.y === playerY) {
       c.collected = true;
-      score++;
+      score += 5;
 
       const collectedCount = collectibles.filter((c) => c.collected).length;
       if (collectedCount % 40 === 0) {
