@@ -559,9 +559,9 @@ function updateScoreDisplay() {
   const genEl = document.getElementById("gen-display");
   const bitEl = document.getElementById("bit-display");
   if (!scoreEl) return;
-  scoreEl.textContent = `Total: ${getTotalScore()}`;
-  genEl.textContent = `Generations Survived: ${generation}`;
-  bitEl.textContent = `Bitcoin: ${score}`;
+  scoreEl.textContent = `Total:  ${getTotalScore()}`;
+  genEl.textContent = `Generations Survived:  ${generation}`;
+  bitEl.textContent = `Bitcoin:  ${score}`;
 }
 
 async function startNewGame() {

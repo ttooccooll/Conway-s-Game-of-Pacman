@@ -975,16 +975,17 @@ button.purple:active {
   }
   #touch-controls {
     position: fixed;
-    bottom: 75px
+    bottom: 40px
   }
   #controls {
     transform: scale(.75);
     position: fixed;
+    margin-bottom: 0;
     bottom: 10px
   }
   #livestats {
     position: fixed;
-    top: 80px
+    top: 60px
   }
 }
 
