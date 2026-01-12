@@ -497,7 +497,7 @@ function getTotalScore() {
   return score + generation;
 }
 
-canPlayGame = sessionStorage.getItem("turtleCanPlay") === "true";
+canPlayGame = sessionStorage.getItem("conpacCanPlay") === "true";
 
 const messageContainer = document.getElementById("message-container");
 
@@ -542,14 +542,14 @@ function setSafeTimeout(fn, delay) {
 
 function canPlayFreeGameToday() {
   const today = new Date().toISOString().split("T")[0];
-  const lastPlayDate = localStorage.getItem("turtleLastPlayDate");
+  const lastPlayDate = localStorage.getItem("conpacLastPlayDate");
 
   return lastPlayDate !== today;
 }
 
 function markFreeGamePlayed() {
   const today = new Date().toISOString().split("T")[0];
-  localStorage.setItem("turtleLastPlayDate", today);
+  localStorage.setItem("conpacLastPlayDate", today);
 }
 
 function showMessage(text, duration = 2000) {
@@ -603,7 +603,7 @@ async function startNewGame() {
   }
 */
   canPlayGame = true;
-  sessionStorage.setItem("turtleCanPlay", "true");
+  sessionStorage.setItem("conpacCanPlay", "true");
 
   initGrid();
 
@@ -616,7 +616,7 @@ async function generateInvoiceForBlink(amountSats) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
-      body: JSON.stringify({ amount: amountSats, memo: "Turtle Game Payment" }),
+      body: JSON.stringify({ amount: amountSats, memo: "Conpac Game Payment" }),
     });
 
     const text = await resp.text();
@@ -653,7 +653,7 @@ async function payInvoice(paymentRequest) {
   }
 }
 
-async function payWithQR(amountSats, memo = "Turtle Game Payment") {
+async function payWithQR(amountSats, memo = "Conpac Game Payment") {
   const tipBtn = document.getElementById("tip-btn");
   tipBtn.disabled = true;
 
@@ -810,7 +810,7 @@ async function handlePayment() {
       }
     }
 
-    const qrSuccess = await payWithQR(100, "Turtle Game Payment");
+    const qrSuccess = await payWithQR(100, "Conpac Game Payment");
     tipBtn.disabled = false;
     return qrSuccess;
   } catch (err) {
@@ -836,7 +836,7 @@ function showGameOver(won, reason = "") {
   const answerDiv = document.getElementById("game-over-answer");
 
   canPlayGame = false;
-  sessionStorage.removeItem("turtleCanPlay");
+  sessionStorage.removeItem("conpacCanPlay");
 
   if (won) {
     message.textContent = reason || `Survived ${generation} generations`;
@@ -858,18 +858,18 @@ async function loadStats() {
     max_streak: 0,
   };
 
-  const userId = localStorage.getItem("turtleUserId");
+  const userId = localStorage.getItem("conpacUserId");
   if (userId) {
     try {
       const resp = await fetch(
-        `https://turtle-backend.jasonbohio.workers.dev/api/user/${userId}`
+        `https://conpac-backend.jasonbohio.workers.dev/api/user/${userId}`
       );
       if (resp.ok) {
         stats = await resp.json();
       }
     } catch (err) {
       console.warn("Could not fetch stats, falling back to localStorage:", err);
-      const localStats = localStorage.getItem("turtleStats");
+      const localStats = localStorage.getItem("conpacStats");
       if (localStats) stats = JSON.parse(localStats);
     }
   }
@@ -883,14 +883,14 @@ async function loadStats() {
 }
 
 async function updateStats(won) {
-  const userId = localStorage.getItem("turtleUserId");
+  const userId = localStorage.getItem("conpacUserId");
   if (!userId) return;
 
   const body = { won };
 
   try {
     await fetch(
-      `https://turtle-backend.jasonbohio.workers.dev/api/update-stats`,
+      `https://conpac-backend.jasonbohio.workers.dev/api/update-stats`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -902,7 +902,7 @@ async function updateStats(won) {
   }
 
   // fallback to localStorage
-  const statsKey = "turtleStats";
+  const statsKey = "conpacStats";
   const stats = JSON.parse(localStorage.getItem(statsKey)) || {
     played: 0,
     won: 0,
@@ -942,7 +942,7 @@ document.getElementById("username-submit").onclick = async () => {
 
   try {
     const resp = await fetch(
-      `https://turtle-backend.jasonbohio.workers.dev/api/auth`,
+      `https://conpac-backend.jasonbohio.workers.dev/api/auth`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -951,8 +951,8 @@ document.getElementById("username-submit").onclick = async () => {
     );
 
     const data = await resp.json();
-    localStorage.setItem("turtleUserId", data.userId);
-    localStorage.setItem("turtleUsername", data.username);
+    localStorage.setItem("conpacUserId", data.userId);
+    localStorage.setItem("conpacUsername", data.username);
 
     showMessage(`Welcome, ${data.username}!`);
   } catch (err) {
@@ -1011,7 +1011,7 @@ async function renderLeaderboard() {
 
   try {
     const resp = await fetch(
-      `https://turtle-backend.jasonbohio.workers.dev/api/leaderboard`
+      `https://conpac-backend.jasonbohio.workers.dev/api/leaderboard`
     );
 
     if (!resp.ok) throw new Error("Leaderboard fetch failed");
@@ -1029,7 +1029,7 @@ async function renderLeaderboard() {
       return b.win_rate - a.win_rate;
     });
 
-    const currentUser = localStorage.getItem("turtleUsername");
+    const currentUser = localStorage.getItem("conpacUsername");
 
     // Render each player
     data.forEach((u, i) => {
