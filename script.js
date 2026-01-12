@@ -838,74 +838,61 @@ function showGameOver(reason = "") {
   canPlayGame = false;
   sessionStorage.removeItem("conpacCanPlay");
 
-    title.textContent = "☠️ Extinction Event ☠️";
-    message.textContent = reason || "All life died out";
-    answerDiv.innerHTML = "";
+  title.textContent = "☠️ Extinction Event ☠️";
+  message.textContent = reason || "All life died out";
+  answerDiv.innerHTML = "";
 
   showModal("game-over-modal");
 }
 
 async function loadStats() {
-  let stats = {
-    played: 0,
-    current_streak: 0,
-    max_streak: 0,
-  };
+  let stats = { played: 0, best_score: 0, last_score: 0 };
+  const localStats = JSON.parse(localStorage.getItem("conpacStats") || "{}");
 
   const userId = localStorage.getItem("conpacUserId");
   if (userId) {
     try {
-      const resp = await fetch(
-        `https://conpac-backend.jasonbohio.workers.dev/api/user/${userId}`
-      );
+      const resp = await fetch(`https://conpac-backend.jasonbohio.workers.dev/api/user/${userId}`);
       if (resp.ok) {
-        stats = await resp.json();
+        const backendStats = await resp.json();
+        stats.played = backendStats.played ?? localStats.played ?? 0;
+        stats.best_score = backendStats.best_score ?? localStats.best_score ?? 0;
+        stats.last_score = backendStats.last_score ?? localStats.last_score ?? 0;
+      } else {
+        stats = localStats;
       }
     } catch (err) {
-      console.warn("Could not fetch stats, falling back to localStorage:", err);
-      const localStats = localStorage.getItem("conpacStats");
-      if (localStats) stats = JSON.parse(localStats);
+      stats = localStats;
     }
+  } else {
+    stats = localStats;
   }
 
   document.getElementById("played").textContent = stats.played;
-  document.getElementById("current-streak").textContent = stats.current_streak;
-  document.getElementById("max-streak").textContent = stats.max_streak;
+  document.getElementById("best-score").textContent = stats.best_score;
+  document.getElementById("last-score").textContent = stats.last_score;
 }
 
 async function updateStats() {
-  const userId = localStorage.getItem("conpacUserId");
-  if (!userId) return;
-
-  try {
-    await fetch(
-      `https://conpac-backend.jasonbohio.workers.dev/api/update-stats`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, ...body }),
-      }
-    );
-  } catch (err) {
-    console.error("Failed to update stats on backend:", err);
-  }
-
-  // fallback to localStorage
   const statsKey = "conpacStats";
+  const finalScore = getTotalScore();
+
   const stats = JSON.parse(localStorage.getItem(statsKey)) || {
     played: 0,
-    current_streak: 0,
-    max_streak: 0,
+    best_score: 0,
+    last_score: 0,
   };
 
   stats.played++;
-
-  stats.current_streak = 0;
-
+  stats.last_score = finalScore;
+  stats.best_score = Math.max(stats.best_score, finalScore);
 
   localStorage.setItem(statsKey, JSON.stringify(stats));
 
-  loadStats();
+  // Update DOM immediately
+  document.getElementById("played").textContent = stats.played;
+  document.getElementById("best-score").textContent = stats.best_score;
+  document.getElementById("last-score").textContent = stats.last_score;
 }
 
 function pauseLife() {
@@ -913,10 +900,10 @@ function pauseLife() {
   clearInterval(lifeInterval);
 }
 
-function endGame(reason = false) {
+async function endGame(reason = false) {
   pauseLife();
   gameOver = true;
-  updateStats();
+  await updateStats();
   showGameOver(`${reason} Score: ${getTotalScore()}`);
 }
 
@@ -988,7 +975,7 @@ async function renderLeaderboard() {
     <div class="leaderboard-number">#</div>
     <div>Player</div>
     <div class="leaderboard-stats-header">
-      🔥 Streak
+      🔥 High Score
     </div>
   </div>
 `;
@@ -1007,11 +994,6 @@ async function renderLeaderboard() {
       return;
     }
 
-    data.sort((a, b) => {
-      if (b.max_streak !== a.max_streak) return b.max_streak - a.max_streak;
-      return b.win_rate - a.win_rate;
-    });
-
     const currentUser = localStorage.getItem("conpacUsername");
 
     // Render each player
@@ -1028,7 +1010,7 @@ async function renderLeaderboard() {
   <div class="leaderboard-rank">${i + 1}</div>
   <div class="leaderboard-name">${u.username}</div>
   <div class="leaderboard-stats">
-    ${u.max_streak} in a row
+    ${u.high_score} in a row
   </div>
 `;
 
