@@ -28,6 +28,7 @@ let score = 0;
 
 let ghosts = [];
 const NUM_GHOSTS = 5;
+const GHOST_MIN_DISTANCE = 8; // tiles away from player
 
 const canvas = document.getElementById("life-canvas");
 const ctx = canvas.getContext("2d");
@@ -140,11 +141,13 @@ function initGhosts() {
     const x = Math.floor(Math.random() * GRID_SIZE);
     const y = Math.floor(Math.random() * GRID_SIZE);
 
-    if (!grid[y][x] && !(x === playerX && y === playerY)) {
+    const dist = Math.hypot(x - playerX, y - playerY);
+
+    if (!grid[y][x] && dist >= GHOST_MIN_DISTANCE) {
       ghosts.push({
         x,
         y,
-        color: colors[placed % colors.length], // cycle through colors
+        color: colors[placed % colors.length],
       });
       placed++;
     }
@@ -852,12 +855,16 @@ async function loadStats() {
   const userId = localStorage.getItem("conpacUserId");
   if (userId) {
     try {
-      const resp = await fetch(`https://conpac-backend.jasonbohio.workers.dev/api/user/${userId}`);
+      const resp = await fetch(
+        `https://conpac-backend.jasonbohio.workers.dev/api/user/${userId}`
+      );
       if (resp.ok) {
         const backendStats = await resp.json();
         stats.played = backendStats.played ?? localStats.played ?? 0;
-        stats.best_score = backendStats.best_score ?? localStats.best_score ?? 0;
-        stats.last_score = backendStats.last_score ?? localStats.last_score ?? 0;
+        stats.best_score =
+          backendStats.best_score ?? localStats.best_score ?? 0;
+        stats.last_score =
+          backendStats.last_score ?? localStats.last_score ?? 0;
       } else {
         stats = localStats;
       }
