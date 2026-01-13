@@ -1190,18 +1190,21 @@ async function loadNostrProfile(pubkey, npub = null) {
 
   const profile = await fetchProfileFromRelays(pubkey, relays);
 
-  localStorage.setItem(
-    "conpacNostr",
-    JSON.stringify({
-      pubkey,
-      npub,
-      name: profile.name || profile.display_name || "nostrich",
-      picture: profile.picture || null,
-    })
-  );
+  // Use getNostrUsername to compute username
+  const username = getNostrUsername(profile, pubkey, npub);
 
-  applyNostrProfile(profile);
+  const storedProfile = {
+    pubkey,
+    npub,
+    username,
+    picture: profile.picture || null,
+  };
+
+  localStorage.setItem("conpacNostr", JSON.stringify(storedProfile));
+
+  applyNostrProfile(storedProfile);
 }
+
 
 function fetchProfileFromRelays(pubkey, relays) {
   return new Promise((resolve) => {
@@ -1237,7 +1240,6 @@ function fetchProfileFromRelays(pubkey, relays) {
 }
 
 function applyNostrProfile(profile) {
-  // MODAL UI
   const profileBox = document.getElementById("nostr-profile");
   const avatar = document.getElementById("nostr-avatar");
   const nameEl = document.getElementById("nostr-username");
@@ -1250,18 +1252,16 @@ function applyNostrProfile(profile) {
   nameEl.textContent = profile.username;
   profileBox.style.display = "flex";
 
-  // HEADER UI
   const headerBtn = document.getElementById("username-btn");
   headerBtn.textContent = profile.username;
 
-  // GAME USERNAME
   localStorage.setItem("conpacUsername", profile.username);
 
   showMessage(`Welcome, ${profile.username} ⚡`);
 
-  // CLOSE MODAL
   closeModal("username-modal");
 }
+
 
 function getNostrUsername(profile, pubkey, npub = null) {
   if (profile.display_name && profile.display_name.trim()) {
