@@ -411,6 +411,8 @@ main {
 
 .leaderboard {
   margin-top: 10px;
+  max-height: 400px;
+  overflow: scroll;
 }
 
 .leaderboard-rank {
