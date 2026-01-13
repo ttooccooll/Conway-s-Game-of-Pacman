@@ -155,32 +155,38 @@ function initGhosts() {
 }
 
 function placeGlider() {
-  // Top-left safe area
-  let gx = 0;
-  let gy = 0;
+  const corners = [
+    [0, 0], // top-left
+    [GRID_SIZE - 3, 0], // top-right (assuming glider is 3x3)
+    [0, GRID_SIZE - 3], // bottom-left
+    [GRID_SIZE - 3, GRID_SIZE - 3], // bottom-right
+  ];
 
-  // Check if space is empty
-  const canPlace = gliderCoords.every(([dx, dy]) => {
-    const x = gx + dx;
-    const y = gy + dy;
-    return (
-      x >= 0 &&
-      x < GRID_SIZE &&
-      y >= 0 &&
-      y < GRID_SIZE &&
-      !grid[y][x] &&
-      !(x === playerX && y === playerY)
-    );
-  });
+  for (const [gx, gy] of corners) {
+    // Check if space is empty
+    const canPlace = gliderCoords.every(([dx, dy]) => {
+      const x = gx + dx;
+      const y = gy + dy;
+      return (
+        x >= 0 &&
+        x < GRID_SIZE &&
+        y >= 0 &&
+        y < GRID_SIZE &&
+        !grid[y][x] &&
+        !(x === playerX && y === playerY)
+      );
+    });
 
-  if (!canPlace) return false; // abort if blocked
-
-  for (const [dx, dy] of gliderCoords) {
-    grid[gy + dy][gx + dx] = 1;
+    if (canPlace) {
+      for (const [dx, dy] of gliderCoords) {
+        grid[gy + dy][gx + dx] = 1;
+      }
+      showMessage("⚡ A glider has entered the arena! Watch it soar!", 3000);
+      return true; // successfully placed
+    }
   }
 
-  showMessage("⚡ A glider has entered the arena! Watch it soar!", 3000);
-  return true;
+  return false; // no corner available
 }
 
 function placeCollectibles(num = NUM_COLLECTIBLES) {
@@ -190,7 +196,6 @@ function placeCollectibles(num = NUM_COLLECTIBLES) {
     const x = Math.floor(Math.random() * GRID_SIZE);
     const y = Math.floor(Math.random() * GRID_SIZE);
 
-    // Ensure empty and not player, and not overlapping existing collectibles
     if (
       !grid[y][x] &&
       !(x === playerX && y === playerY) &&
