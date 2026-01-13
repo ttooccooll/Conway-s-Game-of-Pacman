@@ -565,6 +565,16 @@ function showMessage(text, duration = 2000) {
   }, duration);
 }
 
+function showError(text, duration = 3000) {
+  activeTimeouts.forEach(clearTimeout);
+  activeTimeouts = [];
+  messageContainer.textContent = text;
+  messageContainer.classList.add("show", "error");
+  setSafeTimeout(() => {
+    messageContainer.classList.remove("show", "error");
+  }, duration);
+}
+
 function updateScoreDisplay() {
   const scoreEl = document.getElementById("score-display");
   const genEl = document.getElementById("gen-display");
