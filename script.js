@@ -4,6 +4,8 @@ const GRID_SIZE = 40;
 let collectibles = [];
 const NUM_COLLECTIBLES = 150;
 
+let username = localStorage.getItem("conpacUsername") || "";
+
 let grid = [];
 let running = false;
 let generation = 0;
@@ -631,11 +633,12 @@ async function startNewGame() {
 
 async function generateInvoiceForBlink(amountSats) {
   try {
+    const usernameSafe = username || "Anonymous";
     const resp = await fetch("/api/create-invoice", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
-      body: JSON.stringify({ amount: amountSats, memo: "Conpac Game Payment" }),
+      body: JSON.stringify({ amount: amountSats, memo: `Conpac Game Payment - ${usernameSafe}`}),
     });
 
     const text = await resp.text();
@@ -672,9 +675,11 @@ async function payInvoice(paymentRequest) {
   }
 }
 
-async function payWithQR(amountSats, memo = "Conpac Game Payment") {
+async function payWithQR(amountSats) {
   const tipBtn = document.getElementById("tip-btn");
   tipBtn.disabled = true;
+  const usernameSafe = username || "Anonymous";
+  const memo = `Conpac Game Payment - ${usernameSafe}`;
 
   try {
     const resp = await fetch("/api/create-invoice", {
@@ -828,8 +833,9 @@ async function handlePayment() {
         console.warn("WebLN failed, falling back to QR:", weblnErr);
       }
     }
-
-    const qrSuccess = await payWithQR(100, "Conpac Game Payment");
+    const usernameSafe = username || "Anonymous";
+    const memo = `Conpac Game Payment - ${usernameSafe}`;
+    const qrSuccess = await payWithQR(100, memo);
     tipBtn.disabled = false;
     return qrSuccess;
   } catch (err) {
