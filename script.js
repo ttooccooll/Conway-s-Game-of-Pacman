@@ -1278,9 +1278,6 @@ function applyNostrProfile(profile) {
   nameEl.textContent = profile.username;
   profileBox.style.display = "flex";
 
-  const headerBtn = document.getElementById("username-btn");
-  headerBtn.textContent = profile.username;
-
   localStorage.setItem("conpacUsername", profile.username);
 
   showMessage(`Welcome, ${profile.username} ⚡`);
