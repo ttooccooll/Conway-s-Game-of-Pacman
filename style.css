@@ -63,13 +63,13 @@ strong {
 }
 
 .stats-grid {
-  margin-top: -20px;
+  margin-top: -40px;
 }
 
 #username-btn,
 #help-btn,
 #stats-btn {
-    font-weight: 700;
+  font-weight: 700;
   position: absolute;
   color: #81ea6cff;
   text-shadow: 0 0 20px #87fd7aff, 0 0 40px #76c818ff;
