@@ -70,7 +70,7 @@ strong {
   font-weight: 700;
   position: absolute;
   color: #81ea6cff;
-  text-shadow: 0 0 10px #87fd7aff, 0 0 20px #76c818ff;
+  text-shadow: 0 0 20px #87fd7aff, 0 0 40px #76c818ff;
 }
 
 #username-btn {
