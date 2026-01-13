@@ -31,7 +31,6 @@ body {
   overflow-x: hidden;
 }
 
-/* ---------------- Header ---------------- */
 header {
   position: fixed;
   display: flex;
@@ -40,9 +39,8 @@ header {
   width: 560px;
   top: 10px;
   padding: 10px 0;
-  text-shadow: 0 0 5px #c88fff;
-  background-color: #000000ff; /* subtle dark grid background */
-  border: 3px solid #7b68ee; /* neon purple border */
+  background-color: #000000ff;
+  border: 3px solid #7b68ee;
   border-radius: 8px;
   //box-shadow: 0 0 20px #7b68ee, 0 0 40px #00bfff inset;
   box-shadow: 0 0 10px #7b68ee, 0 0 20px #00bfff;
@@ -894,6 +892,12 @@ button.purple:active {
     transform: scale(0.62);
   }
   header {
+    transform: scale(.65) translateY(95svh);
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+  header h1 {
     display: none;
   }
   main {
