@@ -1015,7 +1015,7 @@ async function renderLeaderboard() {
       return;
     }
 
-    // ⚡ Sort players by high_score descending (highest first)
+    // Sort players by high_score descending
     data.sort((a, b) => b.high_score - a.high_score);
 
     data.forEach((u, i) => {
@@ -1028,7 +1028,6 @@ async function renderLeaderboard() {
 
       let avatarUrl = u.picture || "/default-avatar.png";
 
-      // override with local nostr avatar for current user
       if (nostr && u.username === currentUser && nostr.picture) {
         avatarUrl = nostr.picture;
       }
