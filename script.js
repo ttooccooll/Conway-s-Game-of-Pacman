@@ -999,13 +999,7 @@ async function renderLeaderboard() {
   const currentUser = localStorage.getItem("conpacUsername");
 
   el.innerHTML = "<h3>🔥 Leaderboard 🔥</h3>";
-  el.innerHTML += `
-    <div class="leaderboard-header">
-      <div class="leaderboard-number"></div>
-      <div class="leaderboard-stats-header">
-      </div>
-    </div>
-  `;
+  el.innerHTML += "<p>Loading leaderboard… ⏳</p>";
 
   try {
     const resp = await fetch(
@@ -1016,6 +1010,9 @@ async function renderLeaderboard() {
 
     let data = await resp.json();
 
+    // Clear loading message
+    el.innerHTML = "<h3>🔥 Leaderboard 🔥</h3>";
+
     if (!data || data.length === 0) {
       el.innerHTML += "<p>No players yet. Play some games to appear here!</p>";
       return;
@@ -1023,6 +1020,14 @@ async function renderLeaderboard() {
 
     // Sort players by high_score descending
     data.sort((a, b) => b.high_score - a.high_score);
+
+    // Add table header
+    el.innerHTML += `
+      <div class="leaderboard-header">
+        <div class="leaderboard-number"></div>
+        <div class="leaderboard-stats-header"></div>
+      </div>
+    `;
 
     data.forEach((u, i) => {
       const row = document.createElement("div");
@@ -1061,7 +1066,7 @@ async function renderLeaderboard() {
     });
   } catch (err) {
     console.error("Failed to render leaderboard:", err);
-    el.innerHTML += "<p>Error loading leaderboard. Try again later.</p>";
+    el.innerHTML = "<p>Error loading leaderboard. Try again later.</p>";
   }
 }
 
