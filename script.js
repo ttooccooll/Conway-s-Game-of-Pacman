@@ -982,7 +982,7 @@ async function renderLeaderboard() {
       <div class="leaderboard-number">#</div>
       <div>Player</div>
       <div class="leaderboard-stats-header">
-        🔥 High Score
+        🔥 High Score 🔥
       </div>
     </div>
   `;
@@ -994,12 +994,15 @@ async function renderLeaderboard() {
 
     if (!resp.ok) throw new Error("Leaderboard fetch failed");
 
-    const data = await resp.json();
+    let data = await resp.json();
 
     if (!data || data.length === 0) {
       el.innerHTML += "<p>No players yet. Play some games to appear here!</p>";
       return;
     }
+
+    // ⚡ Sort players by high_score descending (highest first)
+    data.sort((a, b) => b.high_score - a.high_score);
 
     data.forEach((u, i) => {
       const row = document.createElement("div");
@@ -1009,7 +1012,6 @@ async function renderLeaderboard() {
         row.classList.add("current-player");
       }
 
-      // ✅ avatar selection logic
       let avatarUrl = u.picture || "/default-avatar.png";
 
       // override with local nostr avatar for current user
@@ -1032,7 +1034,7 @@ async function renderLeaderboard() {
         </div>
 
         <div class="leaderboard-stats">
-          ${u.high_score} in a row
+          High Score ${u.high_score}
         </div>
       `;
 
