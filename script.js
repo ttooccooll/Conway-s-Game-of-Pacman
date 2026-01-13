@@ -586,7 +586,7 @@ async function startNewGame() {
   activeTimeouts.forEach(clearTimeout);
   activeTimeouts = [];
 
- let paymentRequired = !canPlayFreeGameToday();
+  /*   let paymentRequired = !canPlayFreeGameToday();
 
  if (!paymentRequired) {
     markFreeGamePlayed();
@@ -603,7 +603,7 @@ async function startNewGame() {
       return;
     }
   }
-
+*/
   canPlayGame = true;
   sessionStorage.setItem("conpacCanPlay", "true");
 
@@ -611,7 +611,7 @@ async function startNewGame() {
 
   closeModal("game-over-modal");
 }
-
+/*
 async function generateInvoiceForBlink(amountSats) {
   try {
     const resp = await fetch("/api/create-invoice", {
@@ -822,7 +822,7 @@ async function handlePayment() {
     return false;
   }
 }
-
+*/
 let inputLocked = false;
 
 function showModal(modalId) {
