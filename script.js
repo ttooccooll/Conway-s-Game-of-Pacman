@@ -985,12 +985,11 @@ async function renderLeaderboard() {
   const nostr = JSON.parse(localStorage.getItem("conpacNostr") || "null");
   const currentUser = localStorage.getItem("conpacUsername");
 
-  el.innerHTML = "<h3>🔥 High Score 🔥</h3>";
+  el.innerHTML = "<h3>🔥 Leaderboard 🔥</h3>";
   el.innerHTML += `
     <div class="leaderboard-header">
       <div class="leaderboard-number"></div>
       <div class="leaderboard-stats-header">
-        
       </div>
     </div>
   `;
@@ -1042,7 +1041,7 @@ async function renderLeaderboard() {
         </div>
 
         <div class="leaderboard-stats">
-          High Score ${u.high_score}
+          High Score - ${u.high_score}
         </div>
       `;
 

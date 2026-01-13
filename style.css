@@ -410,18 +410,29 @@ main {
   font-family: "MyFontc";
 }
 
+.leaderboard {
+  margin-top: 10px;
+}
+
+.leaderboard-rank {
+  transform: translate(-30px);
+  margin-top: 20px
+}
+
 .leaderboard-player {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-direction: column;
 }
 
 .leaderboard-avatar {
-  width: 32px;
-  height: 32px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   object-fit: cover;
   background: #222;
+  margin-right: 10px;
 }
 
 .current-player .leaderboard-avatar {
