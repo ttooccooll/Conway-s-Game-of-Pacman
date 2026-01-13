@@ -10,6 +10,7 @@
       crossorigin="anonymous"
     ></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
     <script src="script.js" defer></script>
     <link rel="stylesheet" id="stylesheet" href="style.css" />
     <meta
@@ -147,20 +148,14 @@
 
     <div id="username-modal" class="modal">
       <div class="modal-content">
-        <h2>Choose a username</h2>
-        <input id="username-input" maxlength="16" />
-        </br>
-        <p>
-        ⚠️ <span class="highlight">Heads up!</span> This game is all about <span class="fun">fun</span> and not serious competition.
-        </p>
-        <p>
-        Anyone can sign in at any time and mess up your stats. Don't stress about your username—it's just a <span class="fun">game</span>! 🐢
-        </p>
-        <p>
-        You can check out the leaderboard and even join an existing username as a sort of team. Keep it light and <span class="fun">enjoy</span> the puzzles. 🎉
-        </p>
-        </br>
-        <button id="username-submit">Continue</button>
+        <button class="close-btn" onclick="closeModal('username-modal')">✕</button>
+        <button id="nostr-login-btn">Login with Nostr</button>
+        <input id="npub-input" placeholder="npub1..." />
+        <button id="npub-submit">Use npub</button>
+        <div id="nostr-profile" style="margin-top:12px; display:none;">
+          <img id="nostr-avatar" style="width:48px;border-radius:50%" />
+          <div id="nostr-username"></div>
+        </div>
       </div>
     </div>
 

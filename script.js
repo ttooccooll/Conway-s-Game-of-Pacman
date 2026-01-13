@@ -912,34 +912,31 @@ async function endGame(reason = false) {
   gameOver = true;
   await updateStats();
   showGameOver(`${reason} Score: ${getTotalScore()}`);
-}
-
-document.getElementById("username-submit").onclick = async () => {
-  const username = document.getElementById("username-input").value.trim();
-  if (!username) return;
-
+  const nostr = JSON.parse(localStorage.getItem("conpacNostr") || "null");
   try {
-    const resp = await fetch(
-      `https://conpac-backend.jasonbohio.workers.dev/api/auth`,
+    const res = await fetch(
+      "https://conpac-backend.jasonbohio.workers.dev/api/submit-score",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({
+          id: nostr?.pubkey || crypto.randomUUID(),
+          username: localStorage.getItem("conpacUsername"),
+          high_score: getTotalScore(),
+          picture: nostr?.picture || null,
+        }),
       }
     );
 
-    const data = await resp.json();
-    localStorage.setItem("conpacUserId", data.userId);
-    localStorage.setItem("conpacUsername", data.username);
-
-    showMessage(`Welcome, ${data.username}!`);
+    if (!res.ok) {
+      console.error("Failed to submit score:", res.status, await res.text());
+    } else {
+      console.log("Score submitted successfully!");
+    }
   } catch (err) {
-    console.error("Failed to save username:", err);
-    showError("Could not save username. Try again.");
+    console.error("Error submitting score:", err);
   }
-
-  closeModal("username-modal");
-};
+}
 
 function movePlayer(dx, dy, dir) {
   if (!canPlayGame || !playerAlive) return;
@@ -976,50 +973,68 @@ function movePlayer(dx, dy, dir) {
 
 async function renderLeaderboard() {
   const el = document.getElementById("leaderboard");
+  const nostr = JSON.parse(localStorage.getItem("conpacNostr") || "null");
+  const currentUser = localStorage.getItem("conpacUsername");
+
   el.innerHTML = "<h3>Leaderboard</h3>";
   el.innerHTML += `
-  <div class="leaderboard-header">
-    <div class="leaderboard-number">#</div>
-    <div>Player</div>
-    <div class="leaderboard-stats-header">
-      🔥 High Score
+    <div class="leaderboard-header">
+      <div class="leaderboard-number">#</div>
+      <div>Player</div>
+      <div class="leaderboard-stats-header">
+        🔥 High Score
+      </div>
     </div>
-  </div>
-`;
+  `;
 
   try {
     const resp = await fetch(
-      `https://conpac-backend.jasonbohio.workers.dev/api/leaderboard`
+      "https://conpac-backend.jasonbohio.workers.dev/api/leaderboard"
     );
 
     if (!resp.ok) throw new Error("Leaderboard fetch failed");
 
-    let data = await resp.json();
+    const data = await resp.json();
 
     if (!data || data.length === 0) {
       el.innerHTML += "<p>No players yet. Play some games to appear here!</p>";
       return;
     }
 
-    const currentUser = localStorage.getItem("conpacUsername");
-
-    // Render each player
     data.forEach((u, i) => {
       const row = document.createElement("div");
       row.className = "leaderboard-row";
 
-      // Highlight current user
       if (u.username === currentUser) {
         row.classList.add("current-player");
       }
 
+      // ✅ avatar selection logic
+      let avatarUrl = u.picture || "/default-avatar.png";
+
+      // override with local nostr avatar for current user
+      if (nostr && u.username === currentUser && nostr.picture) {
+        avatarUrl = nostr.picture;
+      }
+
       row.innerHTML = `
-  <div class="leaderboard-rank">${i + 1}</div>
-  <div class="leaderboard-name">${u.username}</div>
-  <div class="leaderboard-stats">
-    ${u.high_score} in a row
-  </div>
-`;
+        <div class="leaderboard-rank">${i + 1}</div>
+
+        <div class="leaderboard-player">
+          <img
+            class="leaderboard-avatar"
+            src="${avatarUrl}"
+            alt="${u.username}"
+            loading="lazy"
+            onerror="this.src='/default-avatar.png'"
+          />
+          <span class="leaderboard-name">${u.username}</span>
+        </div>
+
+        <div class="leaderboard-stats">
+          ${u.high_score} in a row
+        </div>
+      `;
 
       el.appendChild(row);
     });
@@ -1143,6 +1158,139 @@ function pauseLife() {
   startBtn.disabled = false;
   pauseBtn.disabled = true;
 }
+
+async function loginWithNostr() {
+  if (!window.nostr) {
+    alert("No Nostr extension found");
+    return;
+  }
+
+  const pubkey = await window.nostr.getPublicKey();
+  await loadNostrProfile(pubkey);
+}
+
+document.getElementById("nostr-login-btn").onclick = loginWithNostr;
+
+function npubToHex(npub) {
+  return NostrTools.nip19.decode(npub).data;
+}
+
+document.getElementById("npub-submit").onclick = async () => {
+  const npub = document.getElementById("npub-input").value.trim();
+  const pubkey = npubToHex(npub);
+  await loadNostrProfile(pubkey, npub);
+};
+
+async function loadNostrProfile(pubkey, npub = null) {
+  const relays = [
+    "wss://relay.damus.io",
+    "wss://relay.snort.social",
+    "wss://nostr.wine",
+  ];
+
+  const profile = await fetchProfileFromRelays(pubkey, relays);
+
+  localStorage.setItem(
+    "conpacNostr",
+    JSON.stringify({
+      pubkey,
+      npub,
+      name: profile.name || profile.display_name || "nostrich",
+      picture: profile.picture || null,
+    })
+  );
+
+  applyNostrProfile(profile);
+}
+
+function fetchProfileFromRelays(pubkey, relays) {
+  return new Promise((resolve) => {
+    let resolved = false;
+
+    relays.forEach((url) => {
+      const ws = new WebSocket(url);
+
+      ws.onopen = () => {
+        ws.send(
+          JSON.stringify([
+            "REQ",
+            "profile",
+            { kinds: [0], authors: [pubkey], limit: 1 },
+          ])
+        );
+      };
+
+      ws.onmessage = (msg) => {
+        const data = JSON.parse(msg.data);
+        if (data[0] === "EVENT" && !resolved) {
+          resolved = true;
+          ws.close();
+          resolve(JSON.parse(data[2].content));
+        }
+      };
+
+      setTimeout(() => ws.close(), 2000);
+    });
+
+    setTimeout(() => resolve({}), 2500);
+  });
+}
+
+function applyNostrProfile(profile) {
+  // MODAL UI
+  const profileBox = document.getElementById("nostr-profile");
+  const avatar = document.getElementById("nostr-avatar");
+  const nameEl = document.getElementById("nostr-username");
+
+  if (profile.picture) {
+    avatar.src = profile.picture;
+    avatar.style.display = "block";
+  }
+
+  nameEl.textContent = profile.username;
+  profileBox.style.display = "flex";
+
+  // HEADER UI
+  const headerBtn = document.getElementById("username-btn");
+  headerBtn.textContent = profile.username;
+
+  // GAME USERNAME
+  localStorage.setItem("conpacUsername", profile.username);
+
+  showMessage(`Welcome, ${profile.username} ⚡`);
+
+  // CLOSE MODAL
+  closeModal("username-modal");
+}
+
+function getNostrUsername(profile, pubkey, npub = null) {
+  if (profile.display_name && profile.display_name.trim()) {
+    return profile.display_name.trim();
+  }
+
+  if (profile.name && profile.name.trim()) {
+    return profile.name.trim();
+  }
+
+  if (profile.nip05 && profile.nip05.includes("@")) {
+    return profile.nip05.split("@")[0];
+  }
+
+  // Fallback: short npub
+  const n = npub || NostrTools.nip19.npubEncode(pubkey);
+  return n.slice(0, 8) + "…" + n.slice(-4);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const nostr = JSON.parse(localStorage.getItem("conpacNostr") || "null");
+
+  if (nostr) {
+    applyNostrProfile({
+      username: nostr.username,
+      picture: nostr.picture,
+    });
+  }
+});
 
 window.resetGame = startNewGame;
 window.closeModal = closeModal;

@@ -398,6 +398,24 @@ main {
   font-family: "MyFontc";
 }
 
+.leaderboard-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.leaderboard-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #222;
+}
+
+.current-player .leaderboard-avatar {
+  outline: 2px solid #ffd700;
+}
+
 button.arcade {
   position: relative;
   text-shadow: darkgrey 1px 1px 1px, darkgrey -1px -1px 1px,
