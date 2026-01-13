@@ -13,7 +13,7 @@ let activePointerInterval = null;
 let playerX = Math.floor(GRID_SIZE / 2);
 let playerY = Math.floor(GRID_SIZE / 2);
 let playerAlive = true;
-let playerDir = "right"; // "up" | "down" | "left" | "right"
+let playerDir = "right";
 let mouthOpen = true;
 
 const gliderCoords = [
