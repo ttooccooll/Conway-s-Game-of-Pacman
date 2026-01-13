@@ -1277,7 +1277,6 @@ function applyNostrProfile(profile) {
   closeModal("username-modal");
 }
 
-
 function getNostrUsername(profile, pubkey, npub = null) {
   if (profile.display_name && profile.display_name.trim()) {
     return profile.display_name.trim();
