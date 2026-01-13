@@ -508,12 +508,11 @@ function handleFirstKeypress(e) {
   const activeEl = document.activeElement;
   const openModal = document.querySelector(".modal.show");
 
-  // Don't steal focus if typing in a modal input
   if (
     (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA") &&
     openModal
   ) {
-    return; // let modal handle it
+    return;
   }
 
   if (/^[a-zA-Z]$/.test(e.key) || e.key === "Enter" || e.key === "Backspace") {
@@ -587,7 +586,7 @@ async function startNewGame() {
   activeTimeouts.forEach(clearTimeout);
   activeTimeouts = [];
 
-  /*   let paymentRequired = !canPlayFreeGameToday();
+ let paymentRequired = !canPlayFreeGameToday();
 
  if (!paymentRequired) {
     markFreeGamePlayed();
@@ -604,7 +603,7 @@ async function startNewGame() {
       return;
     }
   }
-*/
+
   canPlayGame = true;
   sessionStorage.setItem("conpacCanPlay", "true");
 
@@ -612,7 +611,7 @@ async function startNewGame() {
 
   closeModal("game-over-modal");
 }
-/*
+
 async function generateInvoiceForBlink(amountSats) {
   try {
     const resp = await fetch("/api/create-invoice", {
@@ -823,7 +822,7 @@ async function handlePayment() {
     return false;
   }
 }
-*/
+
 let inputLocked = false;
 
 function showModal(modalId) {
@@ -1076,8 +1075,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     .addEventListener("click", () => showModal("help-modal"));
   document.getElementById("stats-btn").addEventListener("click", async () => {
     showModal("stats-modal");
-    await loadStats(); // update stats
-    await renderLeaderboard(); // populate leaderboard
+    await loadStats();
+    await renderLeaderboard();
   });
   document
     .getElementById("username-btn")
