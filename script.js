@@ -477,7 +477,7 @@ function stepLife() {
   // ⚠️ New: check if player is now on a live cell
   if (playerAlive && grid[playerY][playerX]) {
     playerAlive = false;
-    endGame("Life grew onto you!");
+    endGame("The walls grew onto you! Watch your surroundings more next time.");
   }
 
   // Place glider every 100 generations
@@ -488,7 +488,7 @@ function stepLife() {
   drawGrid();
 
   if (grid.flat().every((c) => c === 0)) {
-    endGame("All life died out");
+    endGame("You have experienced the slow death of the universe.");
   }
 }
 
@@ -851,7 +851,7 @@ function showGameOver(reason = "") {
   sessionStorage.removeItem("conpacCanPlay");
 
   title.textContent = "☠️ Extinction Event ☠️";
-  message.textContent = reason || "All life died out";
+  message.textContent = reason || "You have experienced the slow death of the universe.";
   answerDiv.innerHTML = "";
 
   showModal("game-over-modal");
@@ -961,7 +961,7 @@ function movePlayer(dx, dy, dir) {
   // Check collision with life
   if (grid[playerY][playerX]) {
     playerAlive = false;
-    endGame("You were eaten by life!");
+    endGame("You were eaten by the walls! Watch out next time.");
   }
 
   // Check collectibles
