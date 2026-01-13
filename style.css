@@ -425,7 +425,8 @@ main {
 }
 
 .current-player .leaderboard-avatar {
-  outline: 2px solid #ffd700;
+  outline: 2px solid #00fbffff;
+  box-shadow: 1px 2px 3px 4px #f371f1ff
 }
 
 #nostr-username {
