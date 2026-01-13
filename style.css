@@ -63,7 +63,7 @@ strong {
 }
 
 .stats-grid {
-  margin-top: -70px;
+  margin-top: -20px;
 }
 
 #username-btn,
@@ -97,7 +97,7 @@ input {
   font-family: MyFontb;
   font-size: 1rem;
   background: black;
-  box-shadow: 3px 3px 3px 3px rgba(19, 88, 34, 0.4) inset;
+  box-shadow: 3px 3px 3px 3px rgba(21, 157, 50, 0.4) inset;
   border: #7b68ee solid 1px;
   padding: 5px;
 }
