@@ -359,6 +359,7 @@ main {
   font-weight: bold;
   box-shadow: 0 0 12px #7b68ee;
   animation: tipPulse 2s infinite ease-in-out;
+  margin-right: 20px;
 }
 
 #controls {
