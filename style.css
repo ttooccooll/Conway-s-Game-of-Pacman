@@ -893,7 +893,7 @@ button.purple:active {
   }
   header {
     //transform: scale(.65) translateY(1000px);
-    width: 85%;
+    width: 90%;
     transform: translateY(85vh);
     background: transparent;
     border: none;
