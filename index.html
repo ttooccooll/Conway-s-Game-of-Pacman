@@ -97,21 +97,24 @@
 
     <div class="modal" id="stats-modal">
       <div class="modal-content">
-        <h2>Statistics</h2>
+        <h2>Stats</h2>
+        <div id="nostr-profile" style="margin-top:12px; display:none;">
+          <img id="nostr-avatar" style="width:78px;border-radius:50%" />
+          <div id="nostr-username"></div>
+        </div>
         <div class="stats-grid">
           <div class="stat-item">
+            <span class="stat-label">Games Played -</span>
             <span class="stat-number" id="played">0</span>
-            <span class="stat-label">Played</span>
           </div>
           <div class="stat-item">
+            <span class="stat-label">Best Score -</span>
             <span class="stat-number" id="best-score">0</span>
-            <span class="stat-label">Best Score</span>
           </div>
           <div class="stat-item">
+            <span class="stat-label">Last Score -</span>
             <span class="stat-number" id="last-score">0</span>
-            <span class="stat-label">Last Score</span>
           </div>
-
         </div>
         <button id="tip-btn" style="display: none">Buy me coffee!</button>
         <button onclick="closeModal('stats-modal')">Close</button>
@@ -149,14 +152,14 @@
 
     <div id="username-modal" class="modal">
       <div class="modal-content">
-        <button class="close-btn" onclick="closeModal('username-modal')">✕</button>
         <button id="nostr-login-btn">Login with Nostr</button>
-        <input id="npub-input" placeholder="npub1..." />
-        <button id="npub-submit">Use npub</button>
-        <div id="nostr-profile" style="margin-top:12px; display:none;">
-          <img id="nostr-avatar" style="width:48px;border-radius:50%" />
-          <div id="nostr-username"></div>
+        <div>
+          <input id="npub-input" placeholder="npub1..." />
         </div>
+        <div>
+          <button id="npub-submit">Submit</button>
+        </div>
+        <button class="close-btn" onclick="closeModal('username-modal')">✕</button>
       </div>
     </div>
 

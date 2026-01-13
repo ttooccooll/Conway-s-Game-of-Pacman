@@ -62,6 +62,10 @@ strong {
   text-shadow: 0 0 20px #df339aff, 0 0 40px #c8276dff;
 }
 
+.stats-grid {
+  margin-top: -70px;
+}
+
 #username-btn,
 #help-btn,
 #stats-btn {
@@ -86,6 +90,16 @@ button,
 .key,
 #keyboard {
   touch-action: manipulation;
+}
+
+input {
+  margin-top: 20px;
+  font-family: MyFontb;
+  font-size: 1rem;
+  background: black;
+  box-shadow: 3px 3px 3px 3px rgba(19, 88, 34, 0.4) inset;
+  border: #7b68ee solid 1px;
+  padding: 5px;
 }
 
 .icon-button {
@@ -317,7 +331,7 @@ main {
   background: linear-gradient(135deg, #7b68ee, #00bfff);
   border: none;
   border-radius: 4px;
-  color: #fff;
+  color: black;
   cursor: pointer;
   font-size: 16px;
   font-weight: bold;
@@ -414,6 +428,11 @@ main {
 
 .current-player .leaderboard-avatar {
   outline: 2px solid #ffd700;
+}
+
+#nostr-username {
+  margin-left: 20px;
+  font-family: MyFontc
 }
 
 button.arcade {
