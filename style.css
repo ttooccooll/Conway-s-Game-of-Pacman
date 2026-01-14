@@ -95,7 +95,8 @@ input {
   font-family: MyFontb;
   font-size: 1rem;
   background: black;
-  color: rgba(38, 194, 88, 0.33);
+  color: rgba(65, 226, 116, 0.85);
+  text-shadow: 0 0 0 1em rgba(63, 147, 99, 0.64);
   box-shadow: 3px 3px 3px 3px rgba(21, 157, 50, 0.4) inset;
   border: #7b68ee solid 1px;
   padding: 5px;
