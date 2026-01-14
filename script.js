@@ -1230,23 +1230,8 @@ const startBtn = document.getElementById("start-btn");
 const pauseBtn = document.getElementById("pause-btn");
 const resetBtn = document.getElementById("reset-btn");
 
-startBtn.addEventListener("click", async () => {
-  if (running) return;
-
-  if (!canPlayGame) {
-    showMessage("Payment required to continue playing...");
-    inputLocked = true;
-
-    const paid = await handlePayment();
-    if (!paid) {
-      showMessage("Payment still not completed. Cannot start the game.");
-      return;
-    }
-
-    canPlayGame = true;
-    sessionStorage.setItem("conpacCanPlay", "true");
-  }
-
+startBtn.addEventListener("click", () => {
+  if (!canPlayGame || running) return;
   startLife();
 });
 
