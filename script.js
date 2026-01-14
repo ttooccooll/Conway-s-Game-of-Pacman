@@ -1075,6 +1075,7 @@ async function renderLeaderboard() {
 
         <div class="leaderboard-stats">
           High Score - ${u.high_score}
+          </br>
           <button
             class="zap-btn"
             id="zap-btn"
