@@ -1238,8 +1238,25 @@ document.addEventListener("click", async (e) => {
 
     try {
       await QRCode.toCanvas(canvas, lud16, { width: 256 });
+
+      // Set LNURL in input for copying
+      const lnurlInput = document.getElementById("lnurl-text");
+      lnurlInput.value = lud16;
+
+      // Add copy button functionality
+      const copyBtn = document.getElementById("copy-lnurl-btn");
+      copyBtn.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(lud16);
+          showMessage("LNURL copied to clipboard ⚡");
+        } catch (copyErr) {
+          console.error("Copy failed:", copyErr);
+          showError("Failed to copy LNURL ⚡");
+        }
+      };
+
       showMessage(
-        "⚡ WebLN not available. You can scan the QR with your Lightning wallet. Note: zaps will only be recorded when using WebLN."
+        "⚡ WebLN not available. You can scan the QR or copy the LNURL with your Lightning wallet. Note: zaps will only be recorded when using WebLN."
       );
     } catch (qrErr) {
       console.error("Failed to generate LNURL QR:", qrErr);
