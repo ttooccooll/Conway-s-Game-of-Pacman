@@ -1156,11 +1156,9 @@ async function showLnurlQR(url) {
   const modal = document.getElementById("lnurl-modal");
   const canvas = document.getElementById("lnurl-qr");
 
-  // Ensure modal is visible before drawing
-  modal.hidden = false;
+  modal.hidden = false; // now outer div has modal class
 
   try {
-    // Wait for QR code to render
     await QRCode.toCanvas(canvas, url, { width: 256 });
   } catch (err) {
     console.error("Failed to render QR code:", err);
@@ -1169,7 +1167,14 @@ async function showLnurlQR(url) {
 }
 
 function closeLnurlModal() {
-  document.getElementById("lnurl-modal").hidden = true;
+  const modal = document.getElementById("lnurl-modal");
+  const canvas = document.getElementById("lnurl-qr");
+
+  modal.hidden = true;
+
+  // Clear canvas
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 document.addEventListener("click", async (e) => {
