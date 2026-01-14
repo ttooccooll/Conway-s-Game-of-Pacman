@@ -1136,13 +1136,13 @@ document.addEventListener("click", async (e) => {
 
   // WebLN check
   if (typeof WebLN === "undefined") {
-    showError("⚡ Zaps currently only work with WebLN wallets.");
+    showMessage("⚡ Zaps currently only work with WebLN wallets.");
     return;
   }
 
   const lnurl = lud16 || lud06;
   if (!lnurl) {
-    showError("This player cannot receive zaps ⚡");
+    showMessage("This player cannot receive zaps ⚡");
     return;
   }
 
