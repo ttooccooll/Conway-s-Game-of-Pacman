@@ -1096,106 +1096,44 @@ async function renderLeaderboard() {
   }
 }
 
-async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
-  if (lnurl.includes("@")) {
-    const [name, domain] = lnurl.split("@");
-    lnurl = `https://${domain}/.well-known/lnurlp/${name}`;
-  }
-
-  const payReq = await fetch(lnurl).then((r) => r.json());
-  const msats = amountSats * 1000;
-
-  const url = new URL(payReq.callback);
-  url.searchParams.set("amount", msats);
-  if (memo) url.searchParams.set("comment", memo);
-
-  const invoiceResp = await fetch(url.toString()).then((r) => r.json());
-  return invoiceResp.pr;
-}
-
-async function getLnurlPayUrl(lnurl, amount, memo) {
-  const res = await fetchLnurlParams(lnurl);
-
-  const msats = amount * 1000;
-  const url = new URL(res.callback);
-
-  url.searchParams.set("amount", msats);
-  if (memo && res.commentAllowed > 0) {
-    url.searchParams.set("comment", memo.slice(0, res.commentAllowed));
-  }
-
-  return url.toString();
-}
-
-async function fetchLnurlParams(lnurl) {
-  let url;
-
-  // lud16 (name@domain)
-  if (lnurl.includes("@")) {
-    const [name, domain] = lnurl.split("@");
-    url = `https://${domain}/.well-known/lnurlp/${name}`;
-  } else {
-    // lud06 (bech32 lnurl)
-    const decoded = bech32.decode(lnurl); // browser-ready
-    const bytes = bech32.fromWords(decoded.words);
-    url = new TextDecoder().decode(Uint8Array.from(bytes));
-  }
-
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Failed to fetch LNURL params");
-
-  const json = await res.json();
-  if (json.status === "ERROR") {
-    throw new Error(json.reason || "LNURL error");
-  }
-
-  return json;
-}
-
-function encodeLnurl(url) {
-  const words = bech32Buffer.toWords(new TextEncoder().encode(url));
-  return bech32Buffer.encode("lnurl", words, 1023);
-}
-
-async function showLnurlQR(url) {
+// Show a Lightning QR for the given lightning address (lud16)
+async function showLnurlQR(lightningAddress) {
   const canvas = document.getElementById("lnurl-qr");
 
-  // Show modal
+  if (!lightningAddress) {
+    showError("This player cannot receive zaps ⚡");
+    return;
+  }
+
+  // Show the modal
   showModal("lnurl-modal");
 
   try {
-    // Just render the plain URL — no bech32 encoding needed
-    await QRCode.toCanvas(canvas, url, { width: 256 });
+    // QR is just the lightning address itself
+    await QRCode.toCanvas(canvas, lightningAddress, { width: 256 });
   } catch (err) {
     console.error("Failed to render QR code:", err);
     showError("⚡ Could not render QR code");
   }
 }
 
-
+// Close the QR modal
 function closeLnurlModal() {
   const canvas = document.getElementById("lnurl-qr");
-
-  // Clear canvas when closing
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Hide modal
   closeModal("lnurl-modal");
 }
 
+// Click handler for zap buttons
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest(".zap-btn");
   if (!btn) return;
 
   const pubkey = btn.dataset.pubkey;
-  const lud16 = btn.dataset.lud16;
-  const lud06 = btn.dataset.lud06;
+  const lud16 = btn.dataset.lud16; // Lightning address
 
-  if (!pubkey) return;
-
-  const lnurl = lud16 || lud06;
-  if (!lnurl) {
+  if (!pubkey || !lud16) {
     showMessage("This player cannot receive zaps ⚡");
     return;
   }
@@ -1206,19 +1144,15 @@ document.addEventListener("click", async (e) => {
     return;
   }
 
-  const hardcodedMemo =
-    "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman! ⚡";
-
   btn.disabled = true;
 
   try {
     // Try WebLN first
     if (!window.webln) throw new Error("NO_WEBLN");
-
     await window.webln.enable();
 
-    const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
-
+    // Fetch invoice via LNURL-pay if needed
+    const invoice = await fetchInvoiceFromLNURL(lud16, amount);
     await window.webln.sendPayment(invoice);
 
     await recordZap(pubkey, amount);
@@ -1226,15 +1160,8 @@ document.addEventListener("click", async (e) => {
   } catch (err) {
     console.warn("WebLN failed, falling back to LNURL-QR:", err);
 
-    try {
-      const lnurlPayUrl = await getLnurlPayUrl(lnurl, amount, hardcodedMemo);
-      console.log("LNURL Pay URL:", lnurlPayUrl);
-
-      await showLnurlQR(lnurlPayUrl);
-    } catch (fallbackErr) {
-      console.error("LNURL-QR fallback failed:", fallbackErr);
-      showError("Unable to generate QR zap ⚡");
-    }
+    // Just show the Lightning address as a QR
+    await showLnurlQR(lud16);
   } finally {
     btn.disabled = false;
   }
