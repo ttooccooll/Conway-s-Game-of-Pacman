@@ -202,7 +202,6 @@ function placeGlider() {
   return true;
 }
 
-
 function placeCollectibles(num = NUM_COLLECTIBLES) {
   let placed = 0;
 
@@ -1125,18 +1124,21 @@ document.addEventListener("click", async (e) => {
   if (!pubkey) return;
 
   // Ask user for amount
-  let amount = parseInt(
-    prompt("Enter zap amount in sats:", "21"),
-    10
-  );
+  let amount = parseInt(prompt("Enter zap amount in sats:", "21"), 10);
   if (!amount || amount <= 0) {
     showError("Zap cancelled or invalid amount ⚡");
     return;
   }
 
-  // WebLN check
-  if (typeof WebLN === "undefined") {
-    showMessage("⚡ Zaps currently only work with WebLN wallets.");
+  if (!window.webln) {
+    showMessage("⚡ Zaps require a WebLN wallet.");
+    return;
+  }
+
+  try {
+    await window.webln.enable();
+  } catch {
+    showMessage("⚡ Wallet not enabled.");
     return;
   }
 
@@ -1149,7 +1151,8 @@ document.addEventListener("click", async (e) => {
   btn.disabled = true;
 
   try {
-    const hardcodedMemo = "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman! ⚡";
+    const hardcodedMemo =
+      "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman! ⚡";
     const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
     await payInvoice(invoice);
     await recordZap(pubkey, amount);
