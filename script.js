@@ -1136,7 +1136,7 @@ async function fetchLnurlParams(lnurl) {
     url = `https://${domain}/.well-known/lnurlp/${name}`;
   } else {
     // lud06 (bech32 lnurl)
-    const decoded = bech32.decode(lnurl, 1500);
+    const decoded = bech32.decode(lnurl); // browser-ready
     const bytes = bech32.fromWords(decoded.words);
     url = new TextDecoder().decode(Uint8Array.from(bytes));
   }
@@ -1157,9 +1157,6 @@ async function showLnurlQR(url) {
 
   // Show modal
   showModal("lnurl-modal");
-
-  // Sanitize URL
-  url = url.trim();
 
   try {
     await QRCode.toCanvas(canvas, url, { width: 256 });
