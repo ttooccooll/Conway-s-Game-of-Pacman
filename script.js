@@ -1146,56 +1146,49 @@ document.addEventListener("click", async (e) => {
 
   if (!pubkey) return;
 
-  // Ask user for amount
-  let amount = parseInt(prompt("Enter zap amount in sats:", "21"), 10);
+  const lnurl = lud16 || lud06;
+  if (!lnurl) {
+    showMessage("This player cannot receive zaps ⚡");
+    return;
+  }
+
+  const amount = parseInt(prompt("Enter zap amount in sats:", "21"), 10);
   if (!amount || amount <= 0) {
     showError("Zap cancelled or invalid amount ⚡");
     return;
   }
 
-  if (!window.webln) {
-    showMessage("⚡ Zaps require a WebLN wallet.");
-    return;
-  }
-
-  const lnurl = lud16 || lud06;
   const hardcodedMemo =
     "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman! ⚡";
 
+  btn.disabled = true;
+
   try {
+    // Try WebLN first
     if (!window.webln) throw new Error("NO_WEBLN");
 
     await window.webln.enable();
 
-    const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
+    const invoice = await fetchInvoiceFromLNURL(
+      lnurl,
+      amount,
+      hardcodedMemo
+    );
 
     await window.webln.sendPayment(invoice);
 
     await recordZap(pubkey, amount);
     showMessage(`⚡ Zap of ${amount} sats sent!`);
   } catch (err) {
-    console.warn("WebLN failed, falling back:", err);
+    console.warn("WebLN failed, falling back to LNURL-QR:", err);
 
-    const lnurlPayUrl = await getLnurlPayUrl(lnurl, amount, hardcodedMemo);
+    const lnurlPayUrl = await getLnurlPayUrl(
+      lnurl,
+      amount,
+      hardcodedMemo
+    );
 
     showLnurlQR(lnurlPayUrl);
-  }
-
-  if (!lnurl) {
-    showMessage("This player cannot receive zaps ⚡");
-    return;
-  }
-
-  btn.disabled = true;
-
-  try {
-    const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
-    await payInvoice(invoice);
-    await recordZap(pubkey, amount);
-    showMessage(`⚡ Zap of ${amount} sats sent!`);
-  } catch (err) {
-    console.error("Zap failed:", err);
-    showError("Zap failed ⚡");
   } finally {
     btn.disabled = false;
   }
