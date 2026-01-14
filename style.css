@@ -898,7 +898,7 @@ button.purple:active {
 }
 
 /* ---------------- Media Queries ---------------- */
-@media (max-width: 500px) {
+@media (max-width: 579px) {
   .tile {
     width: 42px;
     height: 42px;
