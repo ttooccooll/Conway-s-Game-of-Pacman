@@ -607,7 +607,7 @@ async function startNewGame() {
 
   let paymentRequired = !canPlayFreeGameToday();
 
- if (!paymentRequired) {
+  if (!paymentRequired) {
     markFreeGamePlayed();
   }
 
@@ -638,7 +638,10 @@ async function generateInvoiceForBlink(amountSats) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
-      body: JSON.stringify({ amount: amountSats, memo: `Conpac Game Payment - ${usernameSafe}`}),
+      body: JSON.stringify({
+        amount: amountSats,
+        memo: `Conpac Game Payment - ${usernameSafe}`,
+      }),
     });
 
     const text = await resp.text();
@@ -864,7 +867,8 @@ function showGameOver(reason = "") {
   sessionStorage.removeItem("conpacCanPlay");
 
   title.textContent = "☠️ Extinction Event ☠️";
-  message.textContent = reason || "You have experienced the slow death of the universe.";
+  message.textContent =
+    reason || "You have experienced the slow death of the universe.";
   answerDiv.innerHTML = "";
 
   showModal("game-over-modal");
@@ -942,7 +946,7 @@ async function endGame(reason = false) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: nostr?.pubkey || crypto.randomUUID(),
+          pubkey: nostr?.pubkey,
           username: localStorage.getItem("conpacUsername"),
           high_score: getTotalScore(),
           picture: nostr?.picture || null,
@@ -1230,7 +1234,6 @@ async function loadNostrProfile(pubkey, npub = null) {
 
   applyNostrProfile(storedProfile);
 }
-
 
 function fetchProfileFromRelays(pubkey, relays) {
   return new Promise((resolve) => {
