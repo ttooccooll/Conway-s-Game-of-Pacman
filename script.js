@@ -1152,6 +1152,11 @@ async function fetchLnurlParams(lnurl) {
   return json;
 }
 
+function encodeLnurl(url) {
+  const words = bech32Buffer.toWords(new TextEncoder().encode(url));
+  return bech32Buffer.encode("lnurl", words, 1023);
+}
+
 async function showLnurlQR(url) {
   const canvas = document.getElementById("lnurl-qr");
 
@@ -1166,6 +1171,7 @@ async function showLnurlQR(url) {
     showError("⚡ Could not render QR code");
   }
 }
+
 
 function closeLnurlModal() {
   const canvas = document.getElementById("lnurl-qr");
