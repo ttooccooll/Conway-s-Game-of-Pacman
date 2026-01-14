@@ -214,7 +214,8 @@ function placeCollectibles(num = NUM_COLLECTIBLES) {
 }
 
 function drawGhost(g) {
-  const x = g.fx * CELL_SIZE; // fractional position
+  // Use fractional positions for smooth movement
+  const x = g.fx * CELL_SIZE;
   const y = g.fy * CELL_SIZE;
   const size = CELL_SIZE;
   const r = size / 2;
@@ -223,10 +224,13 @@ function drawGhost(g) {
   ctx.fillStyle = g.color;
   ctx.beginPath();
 
+  // === START AT BOTTOM LEFT ===
   ctx.moveTo(x, y + size);
 
+  // === WAVY BOTTOM ===
   const waves = 4;
   const waveWidth = size / waves;
+
   for (let i = 0; i < waves; i++) {
     ctx.quadraticCurveTo(
       x + waveWidth * i + waveWidth / 2,
@@ -236,13 +240,19 @@ function drawGhost(g) {
     );
   }
 
+  // === RIGHT SIDE UP ===
   ctx.lineTo(x + size, y + r);
+
+  // === ROUNDED HEAD ===
   ctx.arc(x + r, y + r, r, 0, Math.PI, true);
+
+  // === LEFT SIDE DOWN ===
   ctx.lineTo(x, y + size);
+
   ctx.closePath();
   ctx.fill();
 
-  // Eyes
+  // === EYES ===
   const eyeRadius = size * 0.12;
   const pupilRadius = eyeRadius * 0.6;
 
