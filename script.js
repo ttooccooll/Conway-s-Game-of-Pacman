@@ -149,8 +149,6 @@ function initGhosts() {
       ghosts.push({
         x,
         y,
-        fx: x,
-        fy: y,
         color: colors[placed % colors.length],
       });
       placed++;
@@ -214,9 +212,8 @@ function placeCollectibles(num = NUM_COLLECTIBLES) {
 }
 
 function drawGhost(g) {
-  // Use fractional positions for smooth movement
-  const x = g.fx * CELL_SIZE;
-  const y = g.fy * CELL_SIZE;
+  const x = g.x * CELL_SIZE;
+  const y = g.y * CELL_SIZE;
   const size = CELL_SIZE;
   const r = size / 2;
 
@@ -411,21 +408,22 @@ function moveGhosts() {
     let bestMove = { dx: 0, dy: 0 };
     let minDist = Infinity;
 
-    // Check the four directions on the grid
+    // Try all 4 directions
     const directions = [
       { dx: 0, dy: -1 }, // up
-      { dx: 0, dy: 1 },  // down
+      { dx: 0, dy: 1 }, // down
       { dx: -1, dy: 0 }, // left
-      { dx: 1, dy: 0 }   // right
+      { dx: 1, dy: 0 }, // right
     ];
 
     for (const dir of directions) {
       const newX = g.x + dir.dx;
       const newY = g.y + dir.dy;
 
-      // Bounds & wall check
-      if (newX < 0 || newX >= GRID_SIZE || newY < 0 || newY >= GRID_SIZE) continue;
-      if (grid[newY][newX]) continue; // wall
+      // Check bounds and walls
+      if (newX < 0 || newX >= GRID_SIZE || newY < 0 || newY >= GRID_SIZE)
+        continue;
+      if (grid[newY][newX]) continue; // can't go through live cells (walls)
 
       // Manhattan distance to player
       const dist = Math.abs(playerX - newX) + Math.abs(playerY - newY);
@@ -435,28 +433,29 @@ function moveGhosts() {
       }
     }
 
-    // 40% chance to move randomly
+    // 40% chance to ignore optimal move and move randomly
     if (Math.random() < 0.4) {
       const possibleMoves = directions.filter((dir) => {
         const nx = g.x + dir.dx;
         const ny = g.y + dir.dy;
-        return nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE && !grid[ny][nx];
+        return (
+          nx >= 0 &&
+          nx < GRID_SIZE &&
+          ny >= 0 &&
+          ny < GRID_SIZE &&
+          !grid[ny][nx]
+        );
       });
       if (possibleMoves.length > 0) {
-        bestMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        bestMove =
+          possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
       }
     }
 
-    // Smooth fractional movement
-    const speed = 0.6; // adjust for faster/slower movement
-    g.fx += bestMove.dx * speed;
-    g.fy += bestMove.dy * speed;
+    g.x += bestMove.dx;
+    g.y += bestMove.dy;
 
-    // Update integer grid positions for logic & collision
-    g.x = Math.round(g.fx);
-    g.y = Math.round(g.fy);
-
-    // Collision with player
+    // Check collision with player
     if (g.x === playerX && g.y === playerY) {
       playerAlive = false;
       endGame("Caught by a ghost! 👻");
@@ -1115,7 +1114,10 @@ document.addEventListener("click", async (e) => {
   if (!pubkey) return;
 
   // Ask user for amount
-  let amount = parseInt(prompt("Enter zap amount in sats:", "21"), 10);
+  let amount = parseInt(
+    prompt("Enter zap amount in sats:", "21"),
+    10
+  );
   if (!amount || amount <= 0) {
     showError("Zap cancelled or invalid amount ⚡");
     return;
@@ -1136,8 +1138,7 @@ document.addEventListener("click", async (e) => {
   btn.disabled = true;
 
   try {
-    const hardcodedMemo =
-      "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman! ⚡";
+    const hardcodedMemo = "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman! ⚡";
     const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
     await payInvoice(invoice);
     await recordZap(pubkey, amount);
