@@ -401,22 +401,23 @@ function moveGhosts() {
     let bestMove = { dx: 0, dy: 0 };
     let minDist = Infinity;
 
-    // Try all 4 directions
+    // Check the four directions on the grid
     const directions = [
       { dx: 0, dy: -1 }, // up
-      { dx: 0, dy: 1 }, // down
+      { dx: 0, dy: 1 },  // down
       { dx: -1, dy: 0 }, // left
-      { dx: 1, dy: 0 }, // right
+      { dx: 1, dy: 0 }   // right
     ];
 
     for (const dir of directions) {
       const newX = g.x + dir.dx;
       const newY = g.y + dir.dy;
 
-      if (newX < 0 || newX >= GRID_SIZE || newY < 0 || newY >= GRID_SIZE)
-        continue;
-      if (grid[newY][newX]) continue; // walls
+      // Bounds & wall check
+      if (newX < 0 || newX >= GRID_SIZE || newY < 0 || newY >= GRID_SIZE) continue;
+      if (grid[newY][newX]) continue; // wall
 
+      // Manhattan distance to player
       const dist = Math.abs(playerX - newX) + Math.abs(playerY - newY);
       if (dist < minDist) {
         minDist = dist;
@@ -424,39 +425,28 @@ function moveGhosts() {
       }
     }
 
-    // 40% chance to ignore optimal move
+    // 40% chance to move randomly
     if (Math.random() < 0.4) {
       const possibleMoves = directions.filter((dir) => {
         const nx = g.x + dir.dx;
         const ny = g.y + dir.dy;
-        return (
-          nx >= 0 &&
-          nx < GRID_SIZE &&
-          ny >= 0 &&
-          ny < GRID_SIZE &&
-          !grid[ny][nx]
-        );
+        return nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE && !grid[ny][nx];
       });
       if (possibleMoves.length > 0) {
-        bestMove =
-          possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        bestMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
       }
     }
 
-    // Target grid position
-    const targetX = g.x + bestMove.dx;
-    const targetY = g.y + bestMove.dy;
+    // Smooth fractional movement
+    const speed = 0.2; // adjust for faster/slower movement
+    g.fx += bestMove.dx * speed;
+    g.fy += bestMove.dy * speed;
 
-    // Smooth movement using fractional positions
-    const speed = 0.2; // 0.05–0.3 for different speeds
-    g.fx += (targetX - g.fx) * speed;
-    g.fy += (targetY - g.fy) * speed;
+    // Update integer grid positions for logic & collision
+    g.x = Math.round(g.fx);
+    g.y = Math.round(g.fy);
 
-    // Snap to grid when very close
-    if (Math.abs(g.fx - targetX) < 0.01) g.x = targetX;
-    if (Math.abs(g.fy - targetY) < 0.01) g.y = targetY;
-
-    // Collision check with player (grid position)
+    // Collision with player
     if (g.x === playerX && g.y === playerY) {
       playerAlive = false;
       endGame("Caught by a ghost! 👻");
