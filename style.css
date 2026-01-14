@@ -49,7 +49,6 @@ header {
 header h1 {
   font-size: 2rem;
   font-family: MyFontb;
-  font-weight: 700;
   letter-spacing: 0.05em;
   color: #c88fff;
   text-shadow: 0 0 20px #c88fff, 0 0 40px #7b68ee;
@@ -86,7 +85,6 @@ strong {
 #username-btn,
 #help-btn,
 #stats-btn {
-  font-weight: 700;
   position: absolute;
   color: #81ea6cff;
   text-shadow: 0 0 1em #87fd7aff, 0 0 2em #76c818ff;
