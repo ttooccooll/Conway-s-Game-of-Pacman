@@ -159,17 +159,26 @@ function initGhosts() {
 function placeGlider() {
   // Define the four corners
   const corners = [
-    [0, 0], // top-left
-    [GRID_SIZE - 3, 0], // top-right
-    [0, GRID_SIZE - 3], // bottom-left
-    [GRID_SIZE - 3, GRID_SIZE - 3], // bottom-right
+    { x: 0, y: 0, flipX: false, flipY: false }, // top-left
+    { x: GRID_SIZE - 3, y: 0, flipX: true, flipY: false }, // top-right
+    { x: 0, y: GRID_SIZE - 3, flipX: false, flipY: true }, // bottom-left
+    { x: GRID_SIZE - 3, y: GRID_SIZE - 3, flipX: true, flipY: true }, // bottom-right
   ];
 
   // Pick a random corner
-  const [gx, gy] = corners[Math.floor(Math.random() * corners.length)];
+  const corner = corners[Math.floor(Math.random() * corners.length)];
+  const gx = corner.x;
+  const gy = corner.y;
+
+  // Adjust coordinates based on flip
+  const coords = gliderCoords.map(([dx, dy]) => {
+    let x = corner.flipX ? 2 - dx : dx;
+    let y = corner.flipY ? 2 - dy : dy;
+    return [x, y];
+  });
 
   // Check if space is empty
-  const canPlace = gliderCoords.every(([dx, dy]) => {
+  const canPlace = coords.every(([dx, dy]) => {
     const x = gx + dx;
     const y = gy + dy;
     return (
@@ -185,13 +194,14 @@ function placeGlider() {
   if (!canPlace) return false; // abort if blocked
 
   // Place the glider
-  for (const [dx, dy] of gliderCoords) {
+  for (const [dx, dy] of coords) {
     grid[gy + dy][gx + dx] = 1;
   }
 
   showMessage("⚡ A glider has entered the arena! Watch it soar!", 3000);
   return true;
 }
+
 
 function placeCollectibles(num = NUM_COLLECTIBLES) {
   let placed = 0;
