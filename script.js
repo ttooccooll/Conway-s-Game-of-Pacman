@@ -448,7 +448,7 @@ function moveGhosts() {
     }
 
     // Smooth fractional movement
-    const speed = 0.2; // adjust for faster/slower movement
+    const speed = 0.6; // adjust for faster/slower movement
     g.fx += bestMove.dx * speed;
     g.fy += bestMove.dy * speed;
 
