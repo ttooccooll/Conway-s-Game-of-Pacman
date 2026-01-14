@@ -1153,10 +1153,10 @@ async function fetchLnurlParams(lnurl) {
 }
 
 async function showLnurlQR(url) {
-  const modal = document.getElementById("lnurl-modal");
   const canvas = document.getElementById("lnurl-qr");
 
-  modal.hidden = false; // now outer div has modal class
+  // Show modal using existing system
+  showModal("lnurl-modal");
 
   try {
     await QRCode.toCanvas(canvas, url, { width: 256 });
@@ -1167,14 +1167,14 @@ async function showLnurlQR(url) {
 }
 
 function closeLnurlModal() {
-  const modal = document.getElementById("lnurl-modal");
   const canvas = document.getElementById("lnurl-qr");
 
-  modal.hidden = true;
-
-  // Clear canvas
+  // Clear canvas when closing
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Hide modal
+  closeModal("lnurl-modal");
 }
 
 document.addEventListener("click", async (e) => {
