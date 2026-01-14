@@ -1116,8 +1116,19 @@ document.addEventListener("click", async (e) => {
 
   if (!pubkey) return;
 
+  // Ask user for amount
+  let amount = parseInt(
+    prompt("Enter zap amount in sats:", "21"),
+    10
+  );
+  if (!amount || amount <= 0) {
+    showError("Zap cancelled or invalid amount ⚡");
+    return;
+  }
+
+  // WebLN check
   if (typeof WebLN === "undefined") {
-    showError("Zaps currently only work with WebLN wallets.");
+    showError("⚡ Zaps currently only work with WebLN wallets.");
     return;
   }
 
@@ -1127,17 +1138,16 @@ document.addEventListener("click", async (e) => {
     return;
   }
 
-  const amount = 21;
   btn.disabled = true;
 
   try {
     const invoice = await fetchInvoiceFromLNURL(lnurl, amount);
     await payInvoice(invoice);
     await recordZap(pubkey, amount);
-    showMessage("⚡ Zap sent!");
+    showMessage(`⚡ Zap of ${amount} sats sent!`);
   } catch (err) {
     console.error("Zap failed:", err);
-    showError("Zap failed");
+    showError("Zap failed ⚡");
   } finally {
     btn.disabled = false;
   }
