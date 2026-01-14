@@ -1084,7 +1084,7 @@ async function renderLeaderboard() {
           >
             ⚡ Zap
           </button>
-          ${u.sats_received || 0} sats (${u.zap_count || 0})
+          ${u.zap_count || 0} zaps ${u.sats_received || 0} sats 
         </div>
       `;
 
