@@ -1115,6 +1115,11 @@ document.addEventListener("click", async (e) => {
 
   if (!pubkey) return;
 
+  if (typeof WebLN === "undefined") {
+    showError("Zaps currently only work with WebLN wallets.");
+    return;
+  }
+
   const lnurl = lud16 || lud06;
   if (!lnurl) {
     showError("This player cannot receive zaps ⚡");
