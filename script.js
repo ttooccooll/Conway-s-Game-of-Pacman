@@ -1138,7 +1138,7 @@ document.addEventListener("click", async (e) => {
   btn.disabled = true;
 
   try {
-    const hardcodedMemo = "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman!";
+    const hardcodedMemo = "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman! ⚡";
     const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
     await payInvoice(invoice);
     await recordZap(pubkey, amount);
