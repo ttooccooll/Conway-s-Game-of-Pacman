@@ -1230,35 +1230,9 @@ const startBtn = document.getElementById("start-btn");
 const pauseBtn = document.getElementById("pause-btn");
 const resetBtn = document.getElementById("reset-btn");
 
-startBtn.addEventListener("click", async () => {
-    if (running) {
-        showMessage("Game is already running!", 1500);
-        return;
-    }
-    if (!canPlayGame) {
-        const freeToday = canPlayFreeGameToday();
-        if (freeToday) {
-            markFreeGamePlayed();
-            canPlayGame = true;
-            showMessage("Free game unlocked for today! ⚡", 2000);
-            initGrid();
-            startLife();
-            return;
-        }
-        showMessage("You need to unlock the game ⚡", 2000);
-        const paid = await handlePayment();
-        if (paid) {
-            canPlayGame = true;
-            showMessage("Payment received! Game unlocked ⚡", 2000);
-            if (!grid || !grid.length) initGrid();
-            startLife();
-        } else {
-            showMessage("Game still locked. Complete payment to play.", 2500);
-        }
-        return;
-    }
-    if (!grid || !grid.length) initGrid();
-    startLife();
+startBtn.addEventListener("click", () => {
+  if (!canPlayGame || running) return;
+  startLife();
 });
 
 pauseBtn.addEventListener("click", () => {
