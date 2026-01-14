@@ -950,6 +950,8 @@ async function endGame(reason = false) {
           username: localStorage.getItem("conpacUsername"),
           high_score: getTotalScore(),
           picture: nostr?.picture || null,
+          lud16: nostr?.lud16 || null,
+          lud06: nostr?.lud06 || null,
         }),
       }
     );
@@ -1091,14 +1093,14 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats) {
   }
 
   // 1️⃣ get payRequest
-  const payReq = await fetch(lnurl).then(r => r.json());
+  const payReq = await fetch(lnurl).then((r) => r.json());
 
   const msats = amountSats * 1000;
 
   // 2️⃣ request invoice
-  const invoiceResp = await fetch(
-    `${payReq.callback}?amount=${msats}`
-  ).then(r => r.json());
+  const invoiceResp = await fetch(`${payReq.callback}?amount=${msats}`).then(
+    (r) => r.json()
+  );
 
   return invoiceResp.pr;
 }
@@ -1136,13 +1138,12 @@ document.addEventListener("click", async (e) => {
 });
 
 async function recordZap(pubkey, amount) {
-  await fetch("/api/record-zap", {
+  await fetch("https://conpac-backend.jasonbohio.workers.dev/api/record-zap", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ pubkey, amount }),
   });
 }
-
 
 document.addEventListener("keydown", (e) => {
   if (!canPlayGame || !playerAlive) return;
@@ -1298,6 +1299,8 @@ async function loadNostrProfile(pubkey, npub = null) {
     npub,
     username,
     picture: profile.picture || null,
+    lud16: profile.lud16 || null,
+    lud06: profile.lud06 || null,
   };
 
   localStorage.setItem("conpacNostr", JSON.stringify(storedProfile));
