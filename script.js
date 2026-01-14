@@ -1076,6 +1076,26 @@ async function renderLeaderboard() {
   }
 }
 
+async function fetchInvoiceFromLNURL(lnurl, amountSats) {
+  // convert lud16 → lnurl if needed
+  if (lnurl.includes("@")) {
+    const [name, domain] = lnurl.split("@");
+    lnurl = `https://${domain}/.well-known/lnurlp/${name}`;
+  }
+
+  // 1️⃣ get payRequest
+  const payReq = await fetch(lnurl).then(r => r.json());
+
+  const msats = amountSats * 1000;
+
+  // 2️⃣ request invoice
+  const invoiceResp = await fetch(
+    `${payReq.callback}?amount=${msats}`
+  ).then(r => r.json());
+
+  return invoiceResp.pr;
+}
+
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest(".zap-btn");
   if (!btn) return;
@@ -1089,7 +1109,7 @@ document.addEventListener("click", async (e) => {
 
   try {
     // 1️⃣ generate invoice
-    const invoice = await generateInvoiceForBlink(amount);
+    const invoice = await fetchInvoiceFromLNURL(u.lud16 || u.lud06, amount);
 
     // 2️⃣ pay
     await payInvoice(invoice);
