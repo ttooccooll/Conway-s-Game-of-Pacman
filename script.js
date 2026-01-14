@@ -1113,6 +1113,29 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
   return invoiceResp.pr;
 }
 
+async function getLnurlPayUrl(lnurl, amount, memo) {
+  const res = await fetchLnurlParams(lnurl);
+
+  const msats = amount * 1000;
+  const url = new URL(res.callback);
+
+  url.searchParams.set("amount", msats);
+  if (memo && res.commentAllowed > 0) {
+    url.searchParams.set("comment", memo.slice(0, res.commentAllowed));
+  }
+
+  return url.toString();
+}
+
+function showLnurlQR(url) {
+  document.getElementById("lnurl-modal").hidden = false;
+  QRCode.toCanvas(document.getElementById("lnurl-qr"), url, { width: 256 });
+}
+
+function closeLnurlModal() {
+  document.getElementById("lnurl-modal").hidden = true;
+}
+
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest(".zap-btn");
   if (!btn) return;
@@ -1136,10 +1159,22 @@ document.addEventListener("click", async (e) => {
   }
 
   try {
+    if (!window.webln) throw new Error("NO_WEBLN");
+
     await window.webln.enable();
-  } catch {
-    showMessage("⚡ Wallet not enabled.");
-    return;
+
+    const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
+
+    await window.webln.sendPayment(invoice);
+
+    await recordZap(pubkey, amount);
+    showMessage(`⚡ Zap of ${amount} sats sent!`);
+  } catch (err) {
+    console.warn("WebLN failed, falling back:", err);
+
+    const lnurlPayUrl = await getLnurlPayUrl(lnurl, amount, hardcodedMemo);
+
+    showLnurlQR(lnurlPayUrl);
   }
 
   const lnurl = lud16 || lud06;
