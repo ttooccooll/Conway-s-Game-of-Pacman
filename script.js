@@ -1239,6 +1239,7 @@ startBtn.addEventListener("click", async () => {
         showMessage("You need to unlock the game ⚡", 2000);
         const paid = await handlePayment();
         if (paid) {
+            if (!grid || !grid.length) initGrid();
             canPlayGame = true;
             startLife();
         } else {
@@ -1246,6 +1247,7 @@ startBtn.addEventListener("click", async () => {
         }
         return;
     }
+    if (!grid || !grid.length) initGrid();
     startLife();
 });
 
