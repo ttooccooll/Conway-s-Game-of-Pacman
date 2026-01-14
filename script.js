@@ -1158,6 +1158,8 @@ document.addEventListener("click", async (e) => {
     return;
   }
 
+  const lnurl = lud16 || lud06;
+
   try {
     if (!window.webln) throw new Error("NO_WEBLN");
 
@@ -1177,7 +1179,6 @@ document.addEventListener("click", async (e) => {
     showLnurlQR(lnurlPayUrl);
   }
 
-  const lnurl = lud16 || lud06;
   if (!lnurl) {
     showMessage("This player cannot receive zaps ⚡");
     return;
