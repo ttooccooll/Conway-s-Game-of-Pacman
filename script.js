@@ -1152,22 +1152,15 @@ async function fetchLnurlParams(lnurl) {
   return json;
 }
 
-function encodeLnurl(url) {
-  const words = bech32Buffer.toWords(new TextEncoder().encode(url));
-  return bech32Buffer.encode("lnurl", words, 1023);
-}
-
 async function showLnurlQR(url) {
   const canvas = document.getElementById("lnurl-qr");
-
-  // Encode callback URL as LNURL
-  const lnurlEncoded = encodeLnurl(url);
 
   // Show modal
   showModal("lnurl-modal");
 
   try {
-    await QRCode.toCanvas(canvas, lnurlEncoded, { width: 256 });
+    // Just render the plain URL — no bech32 encoding needed
+    await QRCode.toCanvas(canvas, url, { width: 256 });
   } catch (err) {
     console.error("Failed to render QR code:", err);
     showError("⚡ Could not render QR code");
