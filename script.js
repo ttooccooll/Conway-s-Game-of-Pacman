@@ -1230,9 +1230,23 @@ const startBtn = document.getElementById("start-btn");
 const pauseBtn = document.getElementById("pause-btn");
 const resetBtn = document.getElementById("reset-btn");
 
-startBtn.addEventListener("click", () => {
-  if (!canPlayGame || running) return;
-  startLife();
+startBtn.addEventListener("click", async () => {
+    if (running) {
+        showMessage("Game is already running!", 1500);
+        return;
+    }
+    if (!canPlayGame) {
+        showMessage("You need to unlock the game ⚡", 2000);
+        const paid = await handlePayment();
+        if (paid) {
+            canPlayGame = true;
+            startLife();
+        } else {
+            showMessage("Game still locked. Complete payment to play.", 2500);
+        }
+        return;
+    }
+    startLife();
 });
 
 pauseBtn.addEventListener("click", () => {
