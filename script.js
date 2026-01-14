@@ -1075,7 +1075,6 @@ async function renderLeaderboard() {
 
         <div class="leaderboard-stats">
           High Score - ${u.high_score}
-          ${u.sats_received || 0} sats (${u.zap_count || 0})
           <button
             class="zap-btn"
             id="zap-btn"
@@ -1085,6 +1084,7 @@ async function renderLeaderboard() {
           >
             ⚡ Zap
           </button>
+          ${u.sats_received || 0} sats (${u.zap_count || 0})
         </div>
       `;
 
