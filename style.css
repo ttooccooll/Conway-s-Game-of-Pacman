@@ -920,7 +920,7 @@ button.purple:active {
   header {
     //transform: scale(.65) translateY(1000px);
     width: 90%;
-    transform: translateY(92vh);
+    transform: translateY(92svh);
     background: transparent;
     border: none;
     box-shadow: none;
