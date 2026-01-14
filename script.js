@@ -1063,6 +1063,8 @@ async function renderLeaderboard() {
 
         <div class="leaderboard-stats">
           High Score - ${u.high_score}
+          ${u.sats_received || 0} sats (${u.zap_count || 0})
+          <button class="zap-btn" data-pubkey="${u.pubkey}">⚡ Zap</button>
         </div>
       `;
 
@@ -1073,6 +1075,45 @@ async function renderLeaderboard() {
     el.innerHTML = "<p>Error loading leaderboard. Try again later.</p>";
   }
 }
+
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".zap-btn");
+  if (!btn) return;
+
+  const pubkey = btn.dataset.pubkey;
+  if (!pubkey) return;
+
+  const amount = 21; // sats (start small!)
+
+  btn.disabled = true;
+
+  try {
+    // 1️⃣ generate invoice
+    const invoice = await generateInvoiceForBlink(amount);
+
+    // 2️⃣ pay
+    await payInvoice(invoice);
+
+    // 3️⃣ record zap
+    await recordZap(pubkey, amount);
+
+    showMessage("⚡ Zap sent!");
+  } catch (err) {
+    console.error("Zap failed:", err);
+    showError("Zap failed");
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+async function recordZap(pubkey, amount) {
+  await fetch("/api/record-zap", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pubkey, amount }),
+  });
+}
+
 
 document.addEventListener("keydown", (e) => {
   if (!canPlayGame || !playerAlive) return;
