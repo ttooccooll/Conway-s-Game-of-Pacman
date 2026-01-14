@@ -1086,23 +1086,20 @@ async function renderLeaderboard() {
   }
 }
 
-async function fetchInvoiceFromLNURL(lnurl, amountSats) {
-  // convert lud16 → lnurl if needed
+async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
   if (lnurl.includes("@")) {
     const [name, domain] = lnurl.split("@");
     lnurl = `https://${domain}/.well-known/lnurlp/${name}`;
   }
 
-  // 1️⃣ get payRequest
   const payReq = await fetch(lnurl).then((r) => r.json());
-
   const msats = amountSats * 1000;
 
-  // 2️⃣ request invoice
-  const invoiceResp = await fetch(`${payReq.callback}?amount=${msats}`).then(
-    (r) => r.json()
-  );
+  const url = new URL(payReq.callback);
+  url.searchParams.set("amount", msats);
+  if (memo) url.searchParams.set("comment", memo);
 
+  const invoiceResp = await fetch(url.toString()).then((r) => r.json());
   return invoiceResp.pr;
 }
 
@@ -1141,7 +1138,8 @@ document.addEventListener("click", async (e) => {
   btn.disabled = true;
 
   try {
-    const invoice = await fetchInvoiceFromLNURL(lnurl, amount);
+    const hardcodedMemo = "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman!";
+    const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
     await payInvoice(invoice);
     await recordZap(pubkey, amount);
     showMessage(`⚡ Zap of ${amount} sats sent!`);
