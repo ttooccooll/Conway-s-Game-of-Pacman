@@ -1153,12 +1153,15 @@ async function fetchLnurlParams(lnurl) {
 }
 
 async function showLnurlQR(url) {
-  document.getElementById("lnurl-modal").hidden = false;
+  const modal = document.getElementById("lnurl-modal");
+  const canvas = document.getElementById("lnurl-qr");
+
+  // Ensure modal is visible before drawing
+  modal.hidden = false;
 
   try {
-    await QRCode.toCanvas(document.getElementById("lnurl-qr"), url, {
-      width: 256,
-    });
+    // Wait for QR code to render
+    await QRCode.toCanvas(canvas, url, { width: 256 });
   } catch (err) {
     console.error("Failed to render QR code:", err);
     showError("⚡ Could not render QR code");
