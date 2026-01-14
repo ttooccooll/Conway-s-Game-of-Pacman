@@ -1236,11 +1236,21 @@ startBtn.addEventListener("click", async () => {
         return;
     }
     if (!canPlayGame) {
+        const freeToday = canPlayFreeGameToday();
+        if (freeToday) {
+            markFreeGamePlayed();
+            canPlayGame = true;
+            showMessage("Free game unlocked for today! ⚡", 2000);
+            initGrid();
+            startLife();
+            return;
+        }
         showMessage("You need to unlock the game ⚡", 2000);
         const paid = await handlePayment();
         if (paid) {
-            if (!grid || !grid.length) initGrid();
             canPlayGame = true;
+            showMessage("Payment received! Game unlocked ⚡", 2000);
+            if (!grid || !grid.length) initGrid();
             startLife();
         } else {
             showMessage("Game still locked. Complete payment to play.", 2500);
