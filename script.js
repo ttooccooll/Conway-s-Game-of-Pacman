@@ -1203,9 +1203,18 @@ document.addEventListener("click", async (e) => {
   } catch (err) {
     console.warn("WebLN failed, falling back to LNURL-QR:", err);
 
-    const lnurlPayUrl = await getLnurlPayUrl(lnurl, amount, hardcodedMemo);
+    try {
+      const lnurlPayUrl = await getLnurlPayUrl(lnurl, amount, hardcodedMemo);
+      console.log("LNURL Pay URL:", lnurlPayUrl);
 
-    showLnurlQR(lnurlPayUrl);
+      const qrEl = document.getElementById("lnurl-qr");
+      await QRCode.toCanvas(qrEl, lnurlPayUrl, { width: 256 });
+
+      document.getElementById("lnurl-modal").hidden = false;
+    } catch (fallbackErr) {
+      console.error("LNURL-QR fallback failed:", fallbackErr);
+      showError("Unable to generate QR zap ⚡");
+    }
   } finally {
     btn.disabled = false;
   }
