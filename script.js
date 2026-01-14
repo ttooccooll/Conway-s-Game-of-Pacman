@@ -1,3 +1,5 @@
+import { bech32 } from "@scure/base";
+
 const CELL_SIZE = 14;
 const GRID_SIZE = 40;
 
@@ -1153,8 +1155,8 @@ async function fetchLnurlParams(lnurl) {
 }
 
 function encodeLnurl(url) {
-  const words = bech32Buffer.toWords(new TextEncoder().encode(url));
-  return bech32Buffer.encode("lnurl", words, 1023);
+  const words = bech32.toWords(new TextEncoder().encode(url));
+  return bech32.encode("lnurl", words, 1023);
 }
 
 async function showLnurlQR(url) {
