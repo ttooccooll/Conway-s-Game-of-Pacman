@@ -1153,8 +1153,8 @@ async function fetchLnurlParams(lnurl) {
 }
 
 function encodeLnurl(url) {
-  const words = bech32.toWords(new TextEncoder().encode(url));
-  return bech32.encode("lnurl", words, 1023); // standard LNURL prefix
+  const words = bech32Buffer.toWords(new TextEncoder().encode(url));
+  return bech32Buffer.encode("lnurl", words, 1023);
 }
 
 async function showLnurlQR(url) {
