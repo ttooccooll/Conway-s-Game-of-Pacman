@@ -1155,8 +1155,11 @@ async function fetchLnurlParams(lnurl) {
 async function showLnurlQR(url) {
   const canvas = document.getElementById("lnurl-qr");
 
-  // Show modal using existing system
+  // Show modal
   showModal("lnurl-modal");
+
+  // Sanitize URL
+  url = url.trim();
 
   try {
     await QRCode.toCanvas(canvas, url, { width: 256 });
