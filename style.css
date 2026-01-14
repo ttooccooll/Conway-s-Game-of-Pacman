@@ -122,6 +122,10 @@ input {
   transform: scale(0.95);
 }
 
+#zap-btn {
+  padding: 2px 5px 2px 3px;
+}
+
 #livestats {
   border: 3px solid #7b68ee; /* neon purple border */
   border-radius: 8px;

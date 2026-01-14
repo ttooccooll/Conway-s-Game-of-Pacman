@@ -1068,6 +1068,7 @@ async function renderLeaderboard() {
           ${u.sats_received || 0} sats (${u.zap_count || 0})
           <button
             class="zap-btn"
+            id="zap-btn"
             data-pubkey="${u.pubkey}"
             data-lud16="${u.lud16 || ""}"
             data-lud06="${u.lud06 || ""}"
