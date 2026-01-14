@@ -163,5 +163,20 @@
       </div>
     </div>
 
+    <div id="zap-modal" class="modal">
+      <div class="modal-content">
+        <h3>⚡ Pay Zap ⚡</h3>
+
+        <canvas id="zap-qr"></canvas>
+
+        <p class="invoice-text" id="zap-invoice"></p>
+
+        <button id="copy-invoice-btn">📋 Copy invoice</button>
+        <a id="lightning-link" target="_blank">Open wallet</a>
+
+        <button onclick="closeModal('zap-modal')">Close</button>
+      </div>
+    </div>
+
   </body>
 </html>

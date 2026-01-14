@@ -202,7 +202,6 @@ function placeGlider() {
   return true;
 }
 
-
 function placeCollectibles(num = NUM_COLLECTIBLES) {
   let placed = 0;
 
@@ -1125,10 +1124,7 @@ document.addEventListener("click", async (e) => {
   if (!pubkey) return;
 
   // Ask user for amount
-  let amount = parseInt(
-    prompt("Enter zap amount in sats:", "21"),
-    10
-  );
+  let amount = parseInt(prompt("Enter zap amount in sats:", "21"), 10);
   if (!amount || amount <= 0) {
     showError("Zap cancelled or invalid amount ⚡");
     return;
@@ -1149,11 +1145,23 @@ document.addEventListener("click", async (e) => {
   btn.disabled = true;
 
   try {
-    const hardcodedMemo = "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman! ⚡";
+    const hardcodedMemo =
+      "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman! ⚡";
     const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
-    await payInvoice(invoice);
-    await recordZap(pubkey, amount);
-    showMessage(`⚡ Zap of ${amount} sats sent!`);
+    // Try WebLN first
+    if (typeof WebLN !== "undefined") {
+      try {
+        await payInvoice(invoice);
+        await recordZap(pubkey, amount);
+        showMessage(`⚡ Zap of ${amount} sats sent!`);
+        return;
+      } catch (err) {
+        console.warn("WebLN failed, falling back to QR", err);
+      }
+    }
+
+    // Fallback
+    showZapFallbackModal(invoice, amount, pubkey);
   } catch (err) {
     console.error("Zap failed:", err);
     showError("Zap failed ⚡");
@@ -1161,6 +1169,33 @@ document.addEventListener("click", async (e) => {
     btn.disabled = false;
   }
 });
+
+async function showZapFallbackModal(invoice, amount, pubkey) {
+  const invoiceEl = document.getElementById("zap-invoice");
+  const qrCanvas = document.getElementById("zap-qr");
+  const copyBtn = document.getElementById("copy-invoice-btn");
+  const lightningLink = document.getElementById("lightning-link");
+
+  invoiceEl.textContent = invoice;
+  lightningLink.href = `lightning:${invoice}`;
+  lightningLink.textContent = "⚡ Open in wallet";
+
+  await QRCode.toCanvas(qrCanvas, invoice, {
+    width: 240,
+  });
+
+  copyBtn.onclick = async () => {
+    await navigator.clipboard.writeText(invoice);
+    showMessage("Invoice copied ⚡");
+  };
+
+  // Optional: user manually confirms payment later
+  lightningLink.onclick = async () => {
+    await recordZap(pubkey, amount);
+  };
+
+  showModal("zap-modal");
+}
 
 async function recordZap(pubkey, amount) {
   await fetch("https://conpac-backend.jasonbohio.workers.dev/api/record-zap", {
