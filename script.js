@@ -1212,25 +1212,21 @@ document.addEventListener("click", async (e) => {
   btn.disabled = true;
 
   try {
-    // --- WebLN path ---
+    // Try WebLN first
     if (!window.webln) throw new Error("NO_WEBLN");
 
     await window.webln.enable();
 
-    // Fetch invoice using LNURL
     const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
 
-    // Pay invoice
     await window.webln.sendPayment(invoice);
 
-    // Record zap on server
     await recordZap(pubkey, amount);
-
     showMessage(`⚡ Zap of ${amount} sats sent!`);
   } catch (err) {
-    // --- Fallback path ---
     console.warn("WebLN not available, showing LNURL QR instead:", err);
 
+    // Fallback: just show LNURL QR
     if (!lud16) {
       showError("Cannot show fallback QR: no LNURL available ⚡");
       btn.disabled = false;
@@ -1241,12 +1237,9 @@ document.addEventListener("click", async (e) => {
     showModal("lnurl-modal");
 
     try {
-      // Encode memo into LNURL-pay URL for QR
-      const lnurlPayUrl = await getLnurlPayUrl(lud16, 1, hardcodedMemo); // amount=1 just to include comment
-      await QRCode.toCanvas(canvas, lnurlPayUrl, { width: 256 });
-
+      await QRCode.toCanvas(canvas, lud16, { width: 256 });
       showMessage(
-        "⚡ WebLN not available. Scan the QR with your Lightning wallet. Note: zaps will only be recorded when using WebLN."
+        "⚡ WebLN not available. You can scan the QR with your Lightning wallet. Note: zaps will only be recorded when using WebLN."
       );
     } catch (qrErr) {
       console.error("Failed to generate LNURL QR:", qrErr);
