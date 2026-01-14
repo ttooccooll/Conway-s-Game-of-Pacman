@@ -1110,32 +1110,16 @@ document.addEventListener("click", async (e) => {
   if (!btn) return;
 
   const pubkey = btn.dataset.pubkey;
-  const lud16 = btn.dataset.lud16;
-  const lud06 = btn.dataset.lud06;
+  const lnurl = btn.dataset.lud16 || btn.dataset.lud06;
 
-  if (!pubkey) return;
-
-  const lnurl = lud16 || lud06;
-  if (!lnurl) {
+  if (!pubkey || !lnurl) {
     showError("This player cannot receive zaps ⚡");
     return;
   }
 
-  const amount = 21;
-  btn.disabled = true;
-
-  try {
-    const invoice = await fetchInvoiceFromLNURL(lnurl, amount);
-    await payInvoice(invoice);
-    await recordZap(pubkey, amount);
-    showMessage("⚡ Zap sent!");
-  } catch (err) {
-    console.error("Zap failed:", err);
-    showError("Zap failed");
-  } finally {
-    btn.disabled = false;
-  }
+  await zapPlayer(pubkey, lnurl, 21);
 });
+
 
 async function recordZap(pubkey, amount) {
   await fetch("https://conpac-backend.jasonbohio.workers.dev/api/record-zap", {
@@ -1144,6 +1128,75 @@ async function recordZap(pubkey, amount) {
     body: JSON.stringify({ pubkey, amount }),
   });
 }
+
+async function zapPlayer(pubkey, lnurl, amount = 21) {
+  const btn = document.querySelector(`.zap-btn[data-pubkey="${pubkey}"]`);
+  if (btn) btn.disabled = true;
+
+  try {
+    let invoice;
+    if (typeof WebLN !== "undefined") {
+      try {
+        invoice = await fetchInvoiceFromLNURL(lnurl, amount);
+        await payInvoice(invoice);
+      } catch (weblnErr) {
+        console.warn("WebLN failed, falling back to QR:", weblnErr);
+        invoice = await fetchInvoiceFromLNURL(lnurl, amount);
+        await payWithQRInvoice(invoice);
+      }
+    } else {
+      invoice = await fetchInvoiceFromLNURL(lnurl, amount);
+      await payWithQRInvoice(invoice);
+    }
+
+    await recordZap(pubkey, amount);
+    showMessage("⚡ Zap sent!");
+  } catch (err) {
+    console.error("Zap failed:", err);
+    showError("Zap failed");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function payWithQRInvoice(invoice) {
+  showModal("payment-qr-modal");
+
+  const canvas = document.getElementById("qr-code");
+  const ctx = canvas.getContext("2d");
+  canvas.width = 200;
+  canvas.height = 200;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  await QRCode.toCanvas(canvas, invoice, { width: 200 });
+
+  const invoiceText = document.getElementById("invoice-text");
+  invoiceText.value = invoice;
+
+  document.getElementById("copy-invoice-btn").onclick = async () => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(invoiceText.value);
+      } else {
+        invoiceText.select();
+        document.execCommand("copy");
+      }
+      document.getElementById("qr-status").textContent = "Invoice copied 📋";
+    } catch {
+      invoiceText.select();
+      document.execCommand("copy");
+      document.getElementById("qr-status").textContent = "Invoice copied 📋";
+    }
+  };
+
+  const statusEl = document.getElementById("qr-status");
+  statusEl.textContent = "Waiting for payment...";
+
+  const paid = await waitForPayment(invoice, statusEl); // Reuse your waitForPayment
+  closeModal("payment-qr-modal");
+
+  if (!paid) throw new Error("Payment not received. Invoice expired.");
+}
+
 
 document.addEventListener("keydown", (e) => {
   if (!canPlayGame || !playerAlive) return;
