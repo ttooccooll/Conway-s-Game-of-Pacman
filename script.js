@@ -1152,9 +1152,17 @@ async function fetchLnurlParams(lnurl) {
   return json;
 }
 
-function showLnurlQR(url) {
+async function showLnurlQR(url) {
   document.getElementById("lnurl-modal").hidden = false;
-  QRCode.toCanvas(document.getElementById("lnurl-qr"), url, { width: 256 });
+
+  try {
+    await QRCode.toCanvas(document.getElementById("lnurl-qr"), url, {
+      width: 256,
+    });
+  } catch (err) {
+    console.error("Failed to render QR code:", err);
+    showError("⚡ Could not render QR code");
+  }
 }
 
 function closeLnurlModal() {
@@ -1207,10 +1215,7 @@ document.addEventListener("click", async (e) => {
       const lnurlPayUrl = await getLnurlPayUrl(lnurl, amount, hardcodedMemo);
       console.log("LNURL Pay URL:", lnurlPayUrl);
 
-      const qrEl = document.getElementById("lnurl-qr");
-      await QRCode.toCanvas(qrEl, lnurlPayUrl, { width: 256 });
-
-      document.getElementById("lnurl-modal").hidden = false;
+      await showLnurlQR(lnurlPayUrl);
     } catch (fallbackErr) {
       console.error("LNURL-QR fallback failed:", fallbackErr);
       showError("Unable to generate QR zap ⚡");
