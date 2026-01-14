@@ -149,10 +149,20 @@ function initGhosts() {
       ghosts.push({
         x,
         y,
+        px: x,
+        py: y,
         color: colors[placed % colors.length],
       });
       placed++;
     }
+  }
+}
+
+function updateGhostPositions() {
+  const speed = 0.15;
+  for (const g of ghosts) {
+    g.px += (g.x - g.px) * speed;
+    g.py += (g.y - g.py) * speed;
   }
 }
 
@@ -212,8 +222,8 @@ function placeCollectibles(num = NUM_COLLECTIBLES) {
 }
 
 function drawGhost(g) {
-  const x = g.x * CELL_SIZE;
-  const y = g.y * CELL_SIZE;
+  const x = g.px * CELL_SIZE;
+  const y = g.py * CELL_SIZE;
   const size = CELL_SIZE;
   const r = size / 2;
 
@@ -462,6 +472,21 @@ function moveGhosts() {
     }
   }
 }
+
+function gameLoop() {
+  if (playerAlive) {
+    stepLife(); // your existing life step (maybe slower)
+    moveGhosts(); // choose their next target cell
+  }
+
+  updateGhostPositions(); // smooth movement
+  drawGrid();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// Start the loop
+requestAnimationFrame(gameLoop);
 
 function stepLife() {
   mouthOpen = !mouthOpen;
@@ -1114,10 +1139,7 @@ document.addEventListener("click", async (e) => {
   if (!pubkey) return;
 
   // Ask user for amount
-  let amount = parseInt(
-    prompt("Enter zap amount in sats:", "21"),
-    10
-  );
+  let amount = parseInt(prompt("Enter zap amount in sats:", "21"), 10);
   if (!amount || amount <= 0) {
     showError("Zap cancelled or invalid amount ⚡");
     return;
@@ -1138,7 +1160,8 @@ document.addEventListener("click", async (e) => {
   btn.disabled = true;
 
   try {
-    const hardcodedMemo = "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman!";
+    const hardcodedMemo =
+      "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman!";
     const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
     await payInvoice(invoice);
     await recordZap(pubkey, amount);
