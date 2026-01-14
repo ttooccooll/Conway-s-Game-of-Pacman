@@ -1237,6 +1237,7 @@ document.addEventListener("click", async (e) => {
     showModal("lnurl-modal");
 
     try {
+      const url = await getLnurlPayUrl(lud16, 1, hardcodedMemo);
       await QRCode.toCanvas(canvas, lud16, { width: 256 });
       showMessage(
         "⚡ WebLN not available. You can scan the QR with your Lightning wallet. Note: zaps will only be recorded when using WebLN."
