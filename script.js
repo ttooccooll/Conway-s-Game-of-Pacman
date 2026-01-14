@@ -1159,6 +1159,8 @@ document.addEventListener("click", async (e) => {
   }
 
   const lnurl = lud16 || lud06;
+  const hardcodedMemo =
+    "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman! ⚡";
 
   try {
     if (!window.webln) throw new Error("NO_WEBLN");
@@ -1187,8 +1189,6 @@ document.addEventListener("click", async (e) => {
   btn.disabled = true;
 
   try {
-    const hardcodedMemo =
-      "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman! ⚡";
     const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
     await payInvoice(invoice);
     await recordZap(pubkey, amount);
