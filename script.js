@@ -1224,24 +1224,31 @@ document.addEventListener("click", async (e) => {
     await recordZap(pubkey, amount);
     showMessage(`⚡ Zap of ${amount} sats sent!`);
   } catch (err) {
-    console.warn("WebLN failed, showing invoice QR:", err);
+    console.warn("WebLN not available, showing LNURL QR instead:", err);
+
+    // Fallback: just show LNURL QR
+    if (!lud16) {
+      showError("Cannot show fallback QR: no LNURL available ⚡");
+      btn.disabled = false;
+      return;
+    }
+
+    const canvas = document.getElementById("lnurl-qr");
+    showModal("lnurl-modal");
 
     try {
-      // Fallback: show invoice directly as QR code
-      const invoiceResp = await fetchInvoiceFromLNURL(lud16, amount, hardcodedMemo);
-      const invoice = invoiceResp; // invoiceResp.pr
-
-      const canvas = document.getElementById("lnurl-qr");
-      showModal("lnurl-modal");
-      await QRCode.toCanvas(canvas, invoice, { width: 256 });
+      await QRCode.toCanvas(canvas, lud16, { width: 256 });
+      showMessage(
+        "⚡ WebLN not available. You can scan the QR with your Lightning wallet. Note: zaps will only be recorded when using WebLN."
+      );
     } catch (qrErr) {
-      console.error("Failed to generate invoice QR:", qrErr);
+      console.error("Failed to generate LNURL QR:", qrErr);
       showError("Unable to generate QR zap ⚡");
     }
   } finally {
     btn.disabled = false;
   }
-})
+});
 
 async function recordZap(pubkey, amount) {
   await fetch("https://conpac-backend.jasonbohio.workers.dev/api/record-zap", {
