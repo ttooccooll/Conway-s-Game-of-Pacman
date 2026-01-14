@@ -1127,6 +1127,31 @@ async function getLnurlPayUrl(lnurl, amount, memo) {
   return url.toString();
 }
 
+async function fetchLnurlParams(lnurl) {
+  let url;
+
+  // lud16 (name@domain)
+  if (lnurl.includes("@")) {
+    const [name, domain] = lnurl.split("@");
+    url = `https://${domain}/.well-known/lnurlp/${name}`;
+  } else {
+    // lud06 (bech32 lnurl)
+    const decoded = bech32.decode(lnurl, 1500);
+    const bytes = bech32.fromWords(decoded.words);
+    url = new TextDecoder().decode(Uint8Array.from(bytes));
+  }
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch LNURL params");
+
+  const json = await res.json();
+  if (json.status === "ERROR") {
+    throw new Error(json.reason || "LNURL error");
+  }
+
+  return json;
+}
+
 function showLnurlQR(url) {
   document.getElementById("lnurl-modal").hidden = false;
   QRCode.toCanvas(document.getElementById("lnurl-qr"), url, { width: 256 });
