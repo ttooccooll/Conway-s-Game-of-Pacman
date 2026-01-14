@@ -1086,24 +1086,16 @@ async function renderLeaderboard() {
 }
 
 async function fetchInvoiceFromLNURL(lnurl, amountSats) {
-  // convert lud16 → lnurl if needed
-  if (lnurl.includes("@")) {
-    const [name, domain] = lnurl.split("@");
-    lnurl = `https://${domain}/.well-known/lnurlp/${name}`;
-  }
-
-  // 1️⃣ get payRequest
-  const payReq = await fetch(lnurl).then((r) => r.json());
-
   const msats = amountSats * 1000;
-
-  // 2️⃣ request invoice
-  const invoiceResp = await fetch(`${payReq.callback}?amount=${msats}`).then(
-    (r) => r.json()
-  );
-
-  return invoiceResp.pr;
+  const resp = await fetch("https://conpac-backend.jasonbohio.workers.dev/api/proxy-lnurl", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lnurl, amount: msats }),
+  });
+  const data = await resp.json();
+  return data.pr; // payment request
 }
+
 
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest(".zap-btn");
