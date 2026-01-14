@@ -1136,8 +1136,8 @@ async function fetchLnurlParams(lnurl) {
     url = `https://${domain}/.well-known/lnurlp/${name}`;
   } else {
     // lud06 (bech32 lnurl)
-    const decoded = bech32.decode(lnurl, 1500);
-    const bytes = bech32.fromWords(decoded.words);
+    const decoded = window.bech32.bech32.decode(lnurl, 1500);
+    const bytes = window.bech32.bech32.fromWords(decoded.words);
     url = new TextDecoder().decode(Uint8Array.from(bytes));
   }
 
@@ -1194,11 +1194,7 @@ document.addEventListener("click", async (e) => {
 
     await window.webln.enable();
 
-    const invoice = await fetchInvoiceFromLNURL(
-      lnurl,
-      amount,
-      hardcodedMemo
-    );
+    const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
 
     await window.webln.sendPayment(invoice);
 
@@ -1207,11 +1203,7 @@ document.addEventListener("click", async (e) => {
   } catch (err) {
     console.warn("WebLN failed, falling back to LNURL-QR:", err);
 
-    const lnurlPayUrl = await getLnurlPayUrl(
-      lnurl,
-      amount,
-      hardcodedMemo
-    );
+    const lnurlPayUrl = await getLnurlPayUrl(lnurl, amount, hardcodedMemo);
 
     showLnurlQR(lnurlPayUrl);
   } finally {
