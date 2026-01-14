@@ -1227,7 +1227,6 @@ document.addEventListener("click", async (e) => {
     console.warn("WebLN not available, showing LNURL QR instead:", err);
 
     // Fallback: just show LNURL QR
-    // Fallback: just show LNURL QR
     if (!lud16) {
       showError("Cannot show fallback QR: no LNURL available ⚡");
       btn.disabled = false;
@@ -1238,15 +1237,9 @@ document.addEventListener("click", async (e) => {
     showModal("lnurl-modal");
 
     try {
-      // Generate LNURL-pay URL with memo and render QR
-      const lnurlPayUrl = await getLnurlPayUrl(lud16, 1, hardcodedMemo);
-      await QRCode.toCanvas(canvas, lnurlPayUrl, { width: 256 });
-
-      // Set the copy input value
-      document.getElementById("lnurl-copy-input").value = lnurlPayUrl;
-
+      await QRCode.toCanvas(canvas, lud16, { width: 256 });
       showMessage(
-        "⚡ WebLN not available. You can scan the QR or copy the LNURL to pay. Note: zaps will only be recorded when using WebLN."
+        "⚡ WebLN not available. You can scan the QR with your Lightning wallet. Note: zaps will only be recorded when using WebLN."
       );
     } catch (qrErr) {
       console.error("Failed to generate LNURL QR:", qrErr);
@@ -1255,16 +1248,6 @@ document.addEventListener("click", async (e) => {
   } finally {
     btn.disabled = false;
   }
-});
-
-document.getElementById("lnurl-copy-btn").addEventListener("click", () => {
-  const input = document.getElementById("lnurl-copy-input");
-  input.select();
-  input.setSelectionRange(0, 99999);
-  navigator.clipboard
-    .writeText(input.value)
-    .then(() => showMessage("LNURL copied to clipboard ⚡"))
-    .catch(() => showError("Failed to copy LNURL ⚡"));
 });
 
 async function recordZap(pubkey, amount) {
