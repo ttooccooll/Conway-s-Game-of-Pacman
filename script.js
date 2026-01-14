@@ -1136,8 +1136,8 @@ async function fetchLnurlParams(lnurl) {
     url = `https://${domain}/.well-known/lnurlp/${name}`;
   } else {
     // lud06 (bech32 lnurl)
-    const decoded = window.bech32.bech32.decode(lnurl, 1500);
-    const bytes = window.bech32.bech32.fromWords(decoded.words);
+    const decoded = bech32.decode(lnurl, 1500);
+    const bytes = bech32.fromWords(decoded.words);
     url = new TextDecoder().decode(Uint8Array.from(bytes));
   }
 
