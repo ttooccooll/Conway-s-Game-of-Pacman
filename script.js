@@ -1435,7 +1435,7 @@ document.addEventListener("click", async (e) => {
   }
 
   const hardcodedMemo =
-    "You got zapped because your npub is on Conways Game of Pacman!";
+    "You got zapped because your profile is on the leaderboard of Conways Game of Pacman!";
 
   btn.disabled = true;
 
