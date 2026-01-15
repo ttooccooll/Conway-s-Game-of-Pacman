@@ -271,7 +271,10 @@ function placeMWSS() {
     grid[baseY + dy][baseX + dx] = 1;
   }
 
-  showMessage("🚀 MWSS detected! A meduim sized ship is cruising through space!", 3000);
+  showMessage(
+    "🚀 MWSS detected! A meduim sized ship is cruising through space!",
+    3000
+  );
   return true;
 }
 
@@ -606,6 +609,13 @@ function stepLife() {
   grid = next;
   generation++;
 
+  // Remove collectibles that get covered by live cells
+  for (const c of collectibles) {
+    if (!c.collected && grid[c.y][c.x]) {
+      c.collected = true; // silently remove it, no score
+    }
+  }
+
   // ⚠️ New: check if player is now on a live cell
   if (playerAlive && grid[playerY][playerX]) {
     playerAlive = false;
@@ -620,7 +630,6 @@ function stepLife() {
   if (generation % 125 === 0) {
     placeMWSS();
   }
-
 
   if (generation % 175 === 0) {
     placeLWSS();
