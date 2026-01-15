@@ -61,7 +61,7 @@ const lwssCoords = [
 let score = 0;
 
 let ghosts = [];
-const NUM_GHOSTS = 5;
+const NUM_GHOSTS = 6;
 const GHOST_MIN_DISTANCE = 8; // tiles away from player
 
 const canvas = document.getElementById("life-canvas");
