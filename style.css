@@ -309,7 +309,7 @@ main {
 }
 
 #message-container.show {
-  opacity: .7;
+  opacity: .6;
 }
 #message-container.error {
   background: #8b0000;
