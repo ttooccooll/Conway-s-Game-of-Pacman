@@ -1238,31 +1238,33 @@ async function renderLeaderboard() {
 }
 
 async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
+  // Step 0: fetch LNURL params
   const params = await fetchLnurlParams(lnurl);
 
   if (!params || !params.callback) {
     throw new Error("LNURL params missing callback URL");
   }
 
+  // Convert sats -> msats
   const msats = Number(amountSats) * 1000;
   if (isNaN(msats) || msats <= 0) {
     throw new Error("Invalid amount for LNURL invoice");
   }
 
+  // Check min/max allowed by LNURL server
   if (msats < params.minSendable || msats > params.maxSendable) {
     throw new Error(
-      `Amount must be between ${params.minSendable / 1000} and ${
-        params.maxSendable / 1000
-      } sats`
+      `Amount must be between ${params.minSendable / 1000} and ${params.maxSendable / 1000} sats`
     );
   }
 
-  // Helper to build payload
+  // Helper to build payload for backend
   const buildPayload = (includeComment) => {
     const payload = {
       callback: params.callback,
-      amount: msats,
+      amount: msats, // backend expects msats
     };
+
     if (
       includeComment &&
       params.commentAllowed > 0 &&
@@ -1271,22 +1273,51 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     ) {
       payload.comment = memo.trim().slice(0, params.commentAllowed);
     }
+
     return payload;
   };
 
-  // Step 1: try with comment
+  // Step 1: try with comment (if allowed)
   let payload = buildPayload(true);
   console.log("Trying LNURL invoice with comment:", payload);
 
   try {
     return await fetchInvoiceFromBackend(payload);
   } catch (err) {
-    console.warn("LNURL invoice with comment failed, retrying without comment:", err.message);
-    // Step 2: retry without comment
-    payload = buildPayload(false);
-    console.log("Trying LNURL invoice without comment:", payload);
-    return await fetchInvoiceFromBackend(payload);
+    // Only retry without comment if we previously tried with one
+    if (payload.comment) {
+      console.warn("LNURL invoice with comment failed, retrying without comment:", err.message);
+      payload = buildPayload(false);
+      console.log("Trying LNURL invoice without comment:", payload);
+      return await fetchInvoiceFromBackend(payload);
+    }
+    throw err;
   }
+}
+
+// Helper function to call backend
+async function fetchInvoiceFromBackend(payload) {
+  const resp = await fetch(
+    "https://conpac-backend.jasonbohio.workers.dev/api/lnurl-invoice",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  let data;
+  try {
+    data = await resp.json();
+  } catch {
+    throw new Error("Invalid response from LNURL backend");
+  }
+
+  if (!resp.ok || !data.pr) {
+    throw new Error(data.error || "LNURL invoice generation failed");
+  }
+
+  return data.pr;
 }
 
 // Helper function to call backend
