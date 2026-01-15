@@ -1238,24 +1238,33 @@ async function renderLeaderboard() {
 }
 
 async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
+  // Step 1: fetch LNURL params
   const params = await fetchLnurlParams(lnurl);
 
-  const msats = amountSats * 1000;
+  if (!params || !params.callback) {
+    throw new Error("LNURL params missing callback URL");
+  }
 
-  // 🔴 REQUIRED: enforce LNURL limits
+  // Step 2: convert amount to millisatoshis
+  const msats = Number(amountSats) * 1000;
+  if (isNaN(msats) || msats <= 0) {
+    throw new Error("Invalid amount for LNURL invoice");
+  }
+
+  // Step 3: enforce LNURL min/max limits
   if (msats < params.minSendable || msats > params.maxSendable) {
     throw new Error(
-      `Amount must be between ${params.minSendable / 1000} and ${
-        params.maxSendable / 1000
-      } sats`
+      `Amount must be between ${params.minSendable / 1000} and ${params.maxSendable / 1000} sats`
     );
   }
 
+  // Step 4: build payload for backend
   const payload = {
     callback: params.callback,
     amount: msats,
   };
 
+  // ✅ Attach comment only if allowed and non-empty
   if (
     params.commentAllowed > 0 &&
     typeof memo === "string" &&
@@ -1264,6 +1273,9 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     payload.comment = memo.trim().slice(0, params.commentAllowed);
   }
 
+  console.log("LNURL invoice payload:", payload);
+
+  // Step 5: send request to backend
   const resp = await fetch(
     "https://conpac-backend.jasonbohio.workers.dev/api/lnurl-invoice",
     {
@@ -1273,9 +1285,18 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     }
   );
 
-  const data = await resp.json();
+  let data;
+  try {
+    data = await resp.json();
+  } catch (err) {
+    const text = await resp.text();
+    console.error("LNURL backend returned invalid JSON:", text);
+    throw new Error("Invalid response from LNURL backend");
+  }
 
+  // Step 6: check for backend errors
   if (!resp.ok || !data.pr) {
+    console.error("LNURL backend error response:", data);
     throw new Error(
       typeof data?.error === "string"
         ? data.error
@@ -1283,6 +1304,7 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     );
   }
 
+  console.log("LNURL invoice generated:", data.pr);
   return data.pr;
 }
 
