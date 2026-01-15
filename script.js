@@ -1242,6 +1242,13 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
 
   const msats = amountSats * 1000;
 
+  // 🔴 REQUIRED: enforce LNURL limits
+  if (msats < params.minSendable || msats > params.maxSendable) {
+    throw new Error(
+      `Amount must be between ${params.minSendable / 1000} and ${params.maxSendable / 1000} sats`
+    );
+  }
+
   const resp = await fetch(
     "https://conpac-backend.jasonbohio.workers.dev/api/lnurl-invoice",
     {
@@ -1261,12 +1268,11 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
   const data = await resp.json();
 
   if (!resp.ok || !data.pr) {
-    const msg =
+    throw new Error(
       typeof data?.error === "string"
         ? data.error
-        : "LNURL invoice generation failed";
-
-    throw new Error(msg);
+        : "LNURL invoice generation failed"
+    );
   }
 
   return data.pr;
