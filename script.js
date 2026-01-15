@@ -1510,7 +1510,7 @@ function startLife() {
   if (!canPlayGame || running) return;
 
   running = true;
-  lifeInterval = setInterval(stepLife, 200);
+  lifeInterval = setInterval(stepLife, 500);
   startBtn.disabled = true;
   pauseBtn.disabled = false;
 }
