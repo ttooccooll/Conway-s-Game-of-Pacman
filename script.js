@@ -1239,6 +1239,7 @@ async function renderLeaderboard() {
 
 async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
   const params = await fetchLnurlParams(lnurl);
+  console.log("LNURL params:", params);
   if (!params || !params.callback) throw new Error("LNURL params missing callback URL");
 
   const msats = Number(amountSats) * 1000; // 21 sats → 21000 msats
