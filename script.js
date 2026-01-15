@@ -26,6 +26,22 @@ const gliderCoords = [
   [2, 2],
 ];
 
+// Middle-weight spaceship (MWSS)
+const mwssCoords = [
+  [1, 0],
+  [2, 0],
+  [3, 0],
+  [4, 0],
+
+  [0, 1],
+  [4, 1],
+
+  [4, 2],
+
+  [0, 3],
+  [3, 3],
+];
+
 let score = 0;
 
 let ghosts = [];
@@ -199,6 +215,47 @@ function placeGlider() {
   }
 
   showMessage("⚡ A glider has entered the arena! Watch it soar!", 3000);
+  return true;
+}
+
+function placeMWSS() {
+  const corners = [
+    { x: 0, y: 0, flipX: false, flipY: false },
+    { x: GRID_SIZE - 5, y: 0, flipX: true, flipY: false },
+    { x: 0, y: GRID_SIZE - 4, flipX: false, flipY: true },
+    { x: GRID_SIZE - 5, y: GRID_SIZE - 4, flipX: true, flipY: true },
+  ];
+
+  const corner = corners[Math.floor(Math.random() * corners.length)];
+  const baseX = corner.x;
+  const baseY = corner.y;
+
+  const coords = mwssCoords.map(([dx, dy]) => {
+    const x = corner.flipX ? 4 - dx : dx;
+    const y = corner.flipY ? 3 - dy : dy;
+    return [x, y];
+  });
+
+  const canPlace = coords.every(([dx, dy]) => {
+    const x = baseX + dx;
+    const y = baseY + dy;
+    return (
+      x >= 0 &&
+      x < GRID_SIZE &&
+      y >= 0 &&
+      y < GRID_SIZE &&
+      !grid[y][x] &&
+      !(x === playerX && y === playerY)
+    );
+  });
+
+  if (!canPlace) return false;
+
+  for (const [dx, dy] of coords) {
+    grid[baseY + dy][baseX + dx] = 1;
+  }
+
+  showMessage("🚀 MWSS detected! A meduim sized ship is cruising through space!", 3000);
   return true;
 }
 
@@ -501,6 +558,10 @@ function stepLife() {
   // Place glider every 100 generations
   if (generation % 100 === 0) {
     placeGlider();
+  }
+
+  if (generation % 125 === 0) {
+    placeMWSS();
   }
 
   drawGrid();
