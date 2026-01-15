@@ -1355,89 +1355,58 @@ document.addEventListener("click", async (e) => {
   const btn = e.target.closest(".zap-btn");
   if (!btn) return;
 
-  const pubkey = btn.dataset.pubkey;
-  const lud16 = btn.dataset.lud16;
-  const lud06 = btn.dataset.lud06;
-
-  if (!pubkey) return;
-
-  const lnurl = lud16 || lud06;
+  const lnurl = btn.dataset.lud16 || btn.dataset.lud06;
   if (!lnurl) {
     showMessage("This player cannot receive zaps ⚡");
     return;
   }
 
-  const min = params.minSendable / 1000;
-  const amount = parseInt(
-    prompt(`Enter zap amount in sats (min ${min}):`, min),
-    10
-  );
-
-  if (!amount || amount <= 0) {
-    showError("Zap cancelled or invalid amount ⚡");
+  let params;
+  try {
+    params = await fetchLnurlParams(lnurl);
+  } catch (err) {
+    showError("Failed to fetch LNURL info ⚡");
     return;
   }
 
-  const hardcodedMemo =
-    "You got zapped because your npub is on Conway's Game of Pacman!";
+  const minSats = params.minSendable / 1000;
+  const maxSats = params.maxSendable / 1000;
+
+  const amount = parseInt(
+    prompt(`Enter zap amount in sats (${minSats}–${maxSats}):`, minSats),
+    10
+  );
+
+  if (!amount || amount < minSats || amount > maxSats) {
+    showError("Invalid zap amount ⚡");
+    return;
+  }
 
   btn.disabled = true;
 
   try {
-    // Try WebLN first
     if (!window.webln) throw new Error("NO_WEBLN");
 
     await window.webln.enable();
 
-    const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
+    const invoice = await fetchInvoiceFromLNURL(
+      lnurl,
+      amount,
+      "You got zapped because your npub is on Conway's Game of Pacman!"
+    );
 
     await window.webln.sendPayment(invoice);
 
-    await recordZap(pubkey, amount);
+    await recordZap(btn.dataset.pubkey, amount);
     showMessage(`⚡ Zap of ${amount} sats sent!`);
   } catch (err) {
-    console.warn("LNURL invoice failed, falling back to QR:", err);
-
-    // Fallback: just show LNURL QR
-    if (!lud16) {
-      showError("Cannot show fallback QR: no LNURL available ⚡");
-      btn.disabled = false;
-      return;
-    }
-
-    const canvas = document.getElementById("lnurl-qr");
-    showModal("lnurl-modal");
-
-    try {
-      await QRCode.toCanvas(canvas, lud16, { width: 256 });
-
-      // Set LNURL in input for copying
-      const lnurlInput = document.getElementById("lnurl-text");
-      lnurlInput.value = lud16;
-
-      // Add copy button functionality
-      const copyBtn = document.getElementById("copy-lnurl-btn");
-      copyBtn.onclick = async () => {
-        try {
-          await navigator.clipboard.writeText(lud16);
-          showMessage("LNURL copied to clipboard ⚡");
-        } catch (copyErr) {
-          console.error("Copy failed:", copyErr);
-          showError("Failed to copy LNURL ⚡");
-        }
-      };
-
-      showMessage(
-        "⚡ WebLN not available. You can scan the QR or copy the LNURL with your Lightning wallet. Note: zaps will only be recorded when using WebLN."
-      );
-    } catch (qrErr) {
-      console.error("Failed to generate LNURL QR:", qrErr);
-      showError("Unable to generate QR zap ⚡");
-    }
+    console.warn("WebLN failed, falling back to QR:", err);
+    showLnurlQR(lnurl);
   } finally {
     btn.disabled = false;
   }
 });
+
 
 async function recordZap(pubkey, amount) {
   await fetch("https://conpac-backend.jasonbohio.workers.dev/api/record-zap", {
