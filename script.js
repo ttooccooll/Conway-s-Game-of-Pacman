@@ -42,6 +42,22 @@ const mwssCoords = [
   [3, 3],
 ];
 
+// Lightweight spaceship (LWSS)
+const lwssCoords = [
+  [1, 0],
+  [4, 0],
+
+  [0, 1],
+
+  [0, 2],
+  [4, 2],
+
+  [0, 3],
+  [1, 3],
+  [2, 3],
+  [3, 3],
+];
+
 let score = 0;
 
 let ghosts = [];
@@ -256,6 +272,47 @@ function placeMWSS() {
   }
 
   showMessage("🚀 MWSS detected! A meduim sized ship is cruising through space!", 3000);
+  return true;
+}
+
+function placeLWSS() {
+  const corners = [
+    { x: 0, y: 0, flipX: false, flipY: false },
+    { x: GRID_SIZE - 5, y: 0, flipX: true, flipY: false },
+    { x: 0, y: GRID_SIZE - 4, flipX: false, flipY: true },
+    { x: GRID_SIZE - 5, y: GRID_SIZE - 4, flipX: true, flipY: true },
+  ];
+
+  const corner = corners[Math.floor(Math.random() * corners.length)];
+  const baseX = corner.x;
+  const baseY = corner.y;
+
+  const coords = lwssCoords.map(([dx, dy]) => {
+    const x = corner.flipX ? 4 - dx : dx;
+    const y = corner.flipY ? 3 - dy : dy;
+    return [x, y];
+  });
+
+  const canPlace = coords.every(([dx, dy]) => {
+    const x = baseX + dx;
+    const y = baseY + dy;
+    return (
+      x >= 0 &&
+      x < GRID_SIZE &&
+      y >= 0 &&
+      y < GRID_SIZE &&
+      !grid[y][x] &&
+      !(x === playerX && y === playerY)
+    );
+  });
+
+  if (!canPlace) return false;
+
+  for (const [dx, dy] of coords) {
+    grid[baseY + dy][baseX + dx] = 1;
+  }
+
+  showMessage("🛸 LWSS incoming! Fast-moving debris detected!", 3000);
   return true;
 }
 
@@ -562,6 +619,11 @@ function stepLife() {
 
   if (generation % 125 === 0) {
     placeMWSS();
+  }
+
+
+  if (generation % 175 === 0) {
+    placeLWSS();
   }
 
   drawGrid();
