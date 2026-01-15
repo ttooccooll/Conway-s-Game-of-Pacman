@@ -1261,12 +1261,16 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
   const data = await resp.json();
 
   if (!resp.ok || !data.pr) {
-    throw new Error(data?.error || "LNURL invoice generation failed");
+    const msg =
+      typeof data?.error === "string"
+        ? data.error
+        : "LNURL invoice generation failed";
+
+    throw new Error(msg);
   }
 
   return data.pr;
 }
-
 
 async function getLnurlPayUrl(lnurl, amount, memo) {
   const res = await fetchLnurlParams(lnurl);
