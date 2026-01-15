@@ -1396,7 +1396,7 @@ document.addEventListener("click", async (e) => {
     await recordZap(pubkey, amount);
     showMessage(`⚡ Zap of ${amount} sats sent!`);
   } catch (err) {
-    console.warn("WebLN not available, showing LNURL QR instead:", err);
+    console.warn("LNURL invoice failed, falling back to QR:", err);
 
     // Fallback: just show LNURL QR
     if (!lud16) {
