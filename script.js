@@ -1251,19 +1251,25 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     );
   }
 
+  const payload = {
+    callback: params.callback,
+    amount: msats,
+  };
+
+  if (
+    params.commentAllowed > 0 &&
+    typeof memo === "string" &&
+    memo.trim().length > 0
+  ) {
+    payload.comment = memo.trim().slice(0, params.commentAllowed);
+  }
+
   const resp = await fetch(
     "https://conpac-backend.jasonbohio.workers.dev/api/lnurl-invoice",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        callback: params.callback,
-        amount: msats,
-        comment:
-          params.commentAllowed > 0
-            ? memo.slice(0, params.commentAllowed)
-            : null,
-      }),
+      body: JSON.stringify(payload),
     }
   );
 
@@ -1367,10 +1373,7 @@ document.addEventListener("click", async (e) => {
     return;
   }
 
-  const amount = parseInt(
-    prompt("Enter zap amount in sats:", "21"),
-    10
-  );
+  const amount = parseInt(prompt("Enter zap amount in sats:", "21"), 10);
 
   if (!amount || amount <= 0) {
     showError("Zap cancelled or invalid amount ⚡");
