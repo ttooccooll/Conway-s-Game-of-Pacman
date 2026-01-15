@@ -1248,7 +1248,35 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     url.searchParams.set("comment", memo.slice(0, params.commentAllowed));
   }
 
-  const invoiceResp = await fetch(url.toString()).then((r) => r.json());
+  async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
+    const params = await fetchLnurlParams(lnurl);
+
+    const msats = amountSats * 1000;
+
+    const resp = await fetch(
+      "https://conpac-backend.jasonbohio.workers.dev/api/lnurl-invoice",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          callback: params.callback,
+          amount: msats,
+          comment:
+            memo && params.commentAllowed > 0
+              ? memo.slice(0, params.commentAllowed)
+              : undefined,
+        }),
+      }
+    );
+
+    const data = await resp.json();
+
+    if (!resp.ok || !data.pr) {
+      throw new Error(data.error || "LNURL invoice generation failed");
+    }
+
+    return data.pr;
+  }
 
   if (!invoiceResp.pr) {
     throw new Error("LNURL callback did not return an invoice");
