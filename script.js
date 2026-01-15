@@ -2,7 +2,7 @@ const CELL_SIZE = 14;
 const GRID_SIZE = 40;
 
 let collectibles = [];
-const NUM_COLLECTIBLES = 350;
+const NUM_COLLECTIBLES = 500;
 
 let username = localStorage.getItem("conpacUsername") || "";
 
