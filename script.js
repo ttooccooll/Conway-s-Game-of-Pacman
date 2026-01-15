@@ -11,6 +11,7 @@ let running = false;
 let generation = 0;
 let lifeInterval = null;
 let activePointerInterval = null;
+let lifeSpeed = 300;
 
 let playerX = Math.floor(GRID_SIZE / 2);
 let playerY = Math.floor(GRID_SIZE / 2);
@@ -594,6 +595,14 @@ function stepLife() {
   moveGhosts();
   updateScoreDisplay();
   const next = grid.map((row) => [...row]);
+
+  // Speed up game after 500 total score
+  if (getTotalScore() > 500 && lifeSpeed === 300) {
+    lifeSpeed = 190; // faster
+    clearInterval(lifeInterval);
+    lifeInterval = setInterval(stepLife, lifeSpeed);
+    showMessage("🔥 Game speed increased!", 2000);
+  }
 
   for (let y = 0; y < GRID_SIZE; y++) {
     for (let x = 0; x < GRID_SIZE; x++) {
@@ -1510,7 +1519,7 @@ function startLife() {
   if (!canPlayGame || running) return;
 
   running = true;
-  lifeInterval = setInterval(stepLife, 300);
+  lifeInterval = setInterval(stepLife, lifeSpeed);
   startBtn.disabled = true;
   pauseBtn.disabled = false;
 }
