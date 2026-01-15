@@ -1132,7 +1132,7 @@ function movePlayer(dx, dy, dir) {
 
       const collectedCount = collectibles.filter((c) => c.collected).length;
       if (collectedCount % 40 === 0) {
-        placeCollectibles(40);
+        placeCollectibles(50);
       }
     }
   }
