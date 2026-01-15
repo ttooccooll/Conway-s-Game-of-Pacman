@@ -1245,7 +1245,9 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
   // 🔴 REQUIRED: enforce LNURL limits
   if (msats < params.minSendable || msats > params.maxSendable) {
     throw new Error(
-      `Amount must be between ${params.minSendable / 1000} and ${params.maxSendable / 1000} sats`
+      `Amount must be between ${params.minSendable / 1000} and ${
+        params.maxSendable / 1000
+      } sats`
     );
   }
 
@@ -1365,7 +1367,12 @@ document.addEventListener("click", async (e) => {
     return;
   }
 
-  const amount = parseInt(prompt("Enter zap amount in sats:", "21"), 10);
+  const min = params.minSendable / 1000;
+  const amount = parseInt(
+    prompt(`Enter zap amount in sats (min ${min}):`, min),
+    10
+  );
+
   if (!amount || amount <= 0) {
     showError("Zap cancelled or invalid amount ⚡");
     return;
