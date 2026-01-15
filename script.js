@@ -1344,15 +1344,28 @@ async function getLnurlPayUrl(lnurl, amount, memo) {
 async function fetchLnurlParams(lnurl) {
   let url;
 
-  // lud16 (name@domain)
   if (lnurl.includes("@")) {
+    // lud16: name@domain
     const [name, domain] = lnurl.split("@");
     url = `https://${domain}/.well-known/lnurlp/${name}`;
   } else {
-    // lud06 (bech32 lnurl)
-    const decoded = bech32.decode(lnurl); // browser-ready
-    const bytes = bech32.fromWords(decoded.words);
-    url = new TextDecoder().decode(Uint8Array.from(bytes));
+    // lud06: bech32 LNURL
+    try {
+      const decoded = bech32.decode(lnurl, 1023); // max length 1023
+      const bytes = bech32.fromWords(decoded.words);
+
+      // Safe conversion of bytes → string
+      url = Array.from(bytes)
+        .map((b) => String.fromCharCode(b))
+        .join("");
+
+      // Ensure URL starts with https://
+      if (!/^https?:\/\//.test(url)) {
+        url = "https://" + url;
+      }
+    } catch (err) {
+      throw new Error("Invalid lud06 LNURL");
+    }
   }
 
   const res = await fetch(url);
