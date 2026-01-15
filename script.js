@@ -1245,6 +1245,8 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     throw new Error("LNURL params missing callback URL");
   }
 
+  console.log("LNURL params:", params);
+
   // Step 2: convert amount to millisatoshis
   const msats = Number(amountSats) * 1000;
   if (isNaN(msats) || msats <= 0) {
@@ -1264,7 +1266,7 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     amount: msats,
   };
 
-  // ✅ Attach comment only if allowed and non-empty
+  // Step 5: attach comment only if allowed, truncated to provider's limit
   if (
     params.commentAllowed > 0 &&
     typeof memo === "string" &&
@@ -1273,9 +1275,14 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     payload.comment = memo.trim().slice(0, params.commentAllowed);
   }
 
-  console.log("LNURL invoice payload:", payload);
+  console.log(
+    "Final LNURL payload:",
+    payload,
+    "Comment length:",
+    payload.comment ? payload.comment.length : 0
+  );
 
-  // Step 5: send request to backend
+  // Step 6: send request to backend
   const resp = await fetch(
     "https://conpac-backend.jasonbohio.workers.dev/api/lnurl-invoice",
     {
@@ -1294,7 +1301,7 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     throw new Error("Invalid response from LNURL backend");
   }
 
-  // Step 6: check for backend errors
+  // Step 7: handle backend errors
   if (!resp.ok || !data.pr) {
     console.error("LNURL backend error response:", data);
     throw new Error(
