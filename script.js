@@ -1260,9 +1260,9 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
         callback: params.callback,
         amount: msats,
         comment:
-          memo && params.commentAllowed > 0
+          params.commentAllowed > 0
             ? memo.slice(0, params.commentAllowed)
-            : undefined,
+            : null,
       }),
     }
   );
