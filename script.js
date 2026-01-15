@@ -1238,19 +1238,22 @@ async function renderLeaderboard() {
 }
 
 async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
-  if (lnurl.includes("@")) {
-    const [name, domain] = lnurl.split("@");
-    lnurl = `https://${domain}/.well-known/lnurlp/${name}`;
+  const params = await fetchLnurlParams(lnurl);
+
+  const msats = amountSats * 1000;
+  const url = new URL(params.callback);
+  url.searchParams.set("amount", msats);
+
+  if (memo && params.commentAllowed > 0) {
+    url.searchParams.set("comment", memo.slice(0, params.commentAllowed));
   }
 
-  const payReq = await fetch(lnurl).then((r) => r.json());
-  const msats = amountSats * 1000;
-
-  const url = new URL(payReq.callback);
-  url.searchParams.set("amount", msats);
-  if (memo) url.searchParams.set("comment", memo);
-
   const invoiceResp = await fetch(url.toString()).then((r) => r.json());
+
+  if (!invoiceResp.pr) {
+    throw new Error("LNURL callback did not return an invoice");
+  }
+
   return invoiceResp.pr;
 }
 
@@ -1348,7 +1351,7 @@ document.addEventListener("click", async (e) => {
   }
 
   const hardcodedMemo =
-    "⚡ You got zapped because your npub is on the leaderboard of Conway's Game of Pacman! ⚡";
+    "You got zapped because your npub is on Conway's Game of Pacman!";
 
   btn.disabled = true;
 
