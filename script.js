@@ -1240,10 +1240,12 @@ async function renderLeaderboard() {
 async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
   const params = await fetchLnurlParams(lnurl);
   console.log("LNURL params:", params);
+
   if (!params || !params.callback) throw new Error("LNURL params missing callback URL");
 
-  const msats = Number(amountSats) * 1000; // 21 sats → 21000 msats
-  if (isNaN(msats) || msats <= 0) throw new Error("Invalid amount for LNURL invoice");
+  const msats = Number(amountSats) * 1000; // sats → msats
+
+  if (isNaN(msats) || msats <= 0) throw new Error("Invalid amount");
 
   if (msats < params.minSendable || msats > params.maxSendable) {
     throw new Error(
@@ -1251,17 +1253,13 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     );
   }
 
-  // Helper to build payload for backend
+  // Helper: build payload safely
   const buildPayload = (includeComment) => {
     const payload = {
       callback: params.callback,
-      amount: msats, // send msats to backend
+      amount: msats,
     };
-    if (
-      includeComment &&
-      params.commentAllowed > 0 &&
-      memo?.trim().length > 0
-    ) {
+    if (includeComment && params.commentAllowed > 0 && memo?.trim().length > 0) {
       payload.comment = memo.trim().slice(0, params.commentAllowed);
     }
     return payload;
@@ -1283,6 +1281,28 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     }
     throw err;
   }
+}
+
+// Backend call helper
+async function fetchInvoiceFromBackend(payload) {
+  const resp = await fetch("/api/lnurl-invoice", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  let data;
+  try {
+    data = await resp.json();
+  } catch {
+    throw new Error("Invalid response from LNURL backend");
+  }
+
+  if (!resp.ok || !data.pr) {
+    throw new Error(data.error || "LNURL invoice generation failed");
+  }
+
+  return data.pr;
 }
 
 // Backend call helper
@@ -1402,7 +1422,7 @@ document.addEventListener("click", async (e) => {
   }
 
   const hardcodedMemo =
-    "You got zapped because your npub is on Conway's Game of Pacman!";
+    "You got zapped because your npub is on Conways Game of Pacman!";
 
   btn.disabled = true;
 
