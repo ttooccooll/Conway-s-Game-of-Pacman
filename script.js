@@ -1367,7 +1367,6 @@ document.addEventListener("click", async (e) => {
     return;
   }
 
-  const min = params.minSendable / 1000;
   const amount = parseInt(
     prompt("Enter zap amount in sats:", "21"),
     10
