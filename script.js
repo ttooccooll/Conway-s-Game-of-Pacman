@@ -1205,35 +1205,39 @@ async function renderLeaderboard() {
         avatarUrl = nostr.picture;
       }
 
+      // 👇 ADD THESE HERE
+      const zapCount = u.zap_count ?? 0;
+      const satsReceived = u.sats_received ?? 0;
+      const zapLabel = zapCount === 1 ? "zap" : "zaps";
+
       row.innerHTML = `
-        <div class="leaderboard-rank">${i + 1}</div>
+    <div class="leaderboard-rank">${i + 1}</div>
 
-        <div class="leaderboard-player">
-          <img
-            class="leaderboard-avatar"
-            src="${avatarUrl}"
-            alt="${u.username}"
-            loading="lazy"
-            onerror="this.src='/default-avatar.png'"
-          />
-          <span class="leaderboard-name">${u.username}</span>
-        </div>
+    <div class="leaderboard-player">
+      <img
+        class="leaderboard-avatar"
+        src="${avatarUrl}"
+        alt="${u.username}"
+        loading="lazy"
+        onerror="this.src='/default-avatar.png'"
+      />
+      <span class="leaderboard-name">${u.username}</span>
+    </div>
 
-        <div class="leaderboard-stats">
-          High Score - ${u.high_score}
-          </br>
-          <button
-            class="zap-btn"
-            id="zap-btn"
-            data-pubkey="${u.pubkey}"
-            data-lud16="${u.lud16 || ""}"
-            data-lud06="${u.lud06 || ""}"
-          >
-            ⚡ Zap
-          </button>
-          ${u.zap_count || 0} zaps ${u.sats_received || 0} sats 
-        </div>
-      `;
+    <div class="leaderboard-stats">
+      High Score - ${u.high_score}
+      </br>
+      <button
+        class="zap-btn"
+        data-pubkey="${u.pubkey}"
+        data-lud16="${u.lud16 || ""}"
+        data-lud06="${u.lud06 || ""}"
+      >
+        ⚡ Zap
+      </button>
+      ${zapCount} ${zapLabel} ${satsReceived} sats
+    </div>
+  `;
 
       el.appendChild(row);
     });
