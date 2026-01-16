@@ -598,7 +598,7 @@ function stepLife() {
 
   // Speed up game after 500 total score
   if (getTotalScore() > 500 && lifeSpeed === 300) {
-    lifeSpeed = 190; // faster
+    lifeSpeed = 210; // faster
     clearInterval(lifeInterval);
     lifeInterval = setInterval(stepLife, lifeSpeed);
     showMessage("🔥 Game speed increased!", 2000);
