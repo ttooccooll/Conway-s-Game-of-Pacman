@@ -831,7 +831,7 @@ async function payInvoice(paymentRequest) {
 async function payWithQR(amountSats) {
   const tipBtn = document.getElementById("tip-btn");
   tipBtn.disabled = true;
-  const usernameSafe = username || "Anonymous";
+  const usernameSafe = localStorage.getItem("conpacUsername") || "Anonymous";
   const memo = `Conpac Game Payment - ${usernameSafe}`;
 
   try {
