@@ -1580,6 +1580,7 @@ startBtn.addEventListener("click", async () => {
   if (!canPlayGame) {
     showMessage("Payment required to continue playing ⚡");
     await handlePayment(); // this will show QR if WebLN fails
+    if (paid) startLife();
     return;
   }
 
