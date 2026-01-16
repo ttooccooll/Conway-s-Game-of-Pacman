@@ -783,7 +783,7 @@ async function startNewGame() {
 
 async function generateInvoiceForBlink(amountSats) {
   try {
-    const usernameSafe = username || "Anonymous";
+    const usernameSafe = localStorage.getItem("conpacUsername") || "Anonymous";
     const resp = await fetch("/api/create-invoice", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
