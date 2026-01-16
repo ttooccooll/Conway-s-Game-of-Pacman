@@ -1133,16 +1133,22 @@ function movePlayer(dx, dy, dir) {
     endGame("You were eaten by the walls! Watch out next time.");
   }
 
+  let replenishing = false;
+
   // Check collectibles
   for (const c of collectibles) {
     if (!c.collected && c.x === playerX && c.y === playerY) {
       c.collected = true;
       score += 5;
 
-      const collectedCount = collectibles.filter((c) => c.collected).length;
-      if (collectedCount % 40 === 0) {
-        placeCollectibles(50);
+      const remaining = collectibles.filter((c) => !c.collected).length;
+
+      if (remaining === 10 && !replenishing) {
+        replenishing = true;
+        placeCollectibles(200);
+        replenishing = false;
       }
+      break;
     }
   }
 
@@ -1241,7 +1247,8 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
   const params = await fetchLnurlParams(lnurl);
   console.log("LNURL params:", params);
 
-  if (!params || !params.callback) throw new Error("LNURL params missing callback URL");
+  if (!params || !params.callback)
+    throw new Error("LNURL params missing callback URL");
 
   const msats = Number(amountSats) * 1000; // sats → msats
 
@@ -1249,7 +1256,9 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
 
   if (msats < params.minSendable || msats > params.maxSendable) {
     throw new Error(
-      `Amount must be between ${params.minSendable / 1000} and ${params.maxSendable / 1000} sats`
+      `Amount must be between ${params.minSendable / 1000} and ${
+        params.maxSendable / 1000
+      } sats`
     );
   }
 
@@ -1259,7 +1268,11 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
       callback: params.callback,
       amount: msats,
     };
-    if (includeComment && params.commentAllowed > 0 && memo?.trim().length > 0) {
+    if (
+      includeComment &&
+      params.commentAllowed > 0 &&
+      memo?.trim().length > 0
+    ) {
       payload.comment = memo.trim().slice(0, params.commentAllowed);
     }
     return payload;
@@ -1274,7 +1287,10 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
   } catch (err) {
     // Step 2: retry without comment
     if (payload.comment) {
-      console.warn("LNURL invoice with comment failed, retrying without comment:", err.message);
+      console.warn(
+        "LNURL invoice with comment failed, retrying without comment:",
+        err.message
+      );
       payload = buildPayload(false);
       console.log("Trying LNURL invoice without comment:", payload);
       return await fetchInvoiceFromBackend(payload);
@@ -1307,11 +1323,14 @@ async function fetchInvoiceFromBackend(payload) {
 
 // Backend call helper
 async function fetchInvoiceFromBackend(payload) {
-  const resp = await fetch("https://conpac-backend.jasonbohio.workers.dev/api/lnurl-invoice", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  const resp = await fetch(
+    "https://conpac-backend.jasonbohio.workers.dev/api/lnurl-invoice",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }
+  );
 
   let data;
   try {
