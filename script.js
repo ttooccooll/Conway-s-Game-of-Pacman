@@ -751,7 +751,7 @@ async function startNewGame() {
   gameOver = false;
   running = false;
   clearInterval(lifeInterval);
-
+  canPlayGame = false;
   activeTimeouts.forEach(clearTimeout);
   activeTimeouts = [];
 
@@ -1576,19 +1576,7 @@ const resetBtn = document.getElementById("reset-btn");
 
 startBtn.addEventListener("click", async () => {
   if (running) return;
-  if (!canPlayGame) {
-    showMessage("Payment required to continue playing ⚡");
-    const paid = await handlePayment();
-    if (paid) {
-      canPlayGame = true;
-      sessionStorage.setItem("conpacCanPlay", "true");
-      startBtn.disabled = false;
-      await startNewGame();
-      startLife();
-    }
-    return;
-  }
-  startLife();
+  await startNewGame();
 });
 
 pauseBtn.addEventListener("click", () => {
