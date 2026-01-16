@@ -1583,7 +1583,7 @@ startBtn.addEventListener("click", async () => {
       canPlayGame = true;
       sessionStorage.setItem("conpacCanPlay", "true");
       startBtn.disabled = false;
-      startLife();
+      await startNewGame();
     }
     return;
   }
