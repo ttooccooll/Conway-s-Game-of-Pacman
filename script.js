@@ -1579,8 +1579,16 @@ startBtn.addEventListener("click", async () => {
 
   if (!canPlayGame) {
     showMessage("Payment required to continue playing ⚡");
-    await handlePayment(); // this will show QR if WebLN fails
-    if (paid) startLife();
+
+    const paid = await handlePayment();
+
+    if (paid) {
+      canPlayGame = true;
+      sessionStorage.setItem("conpacCanPlay", "true");
+
+      startLife();
+    }
+
     return;
   }
 
