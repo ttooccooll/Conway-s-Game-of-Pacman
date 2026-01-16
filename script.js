@@ -1306,28 +1306,6 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
 
 // Backend call helper
 async function fetchInvoiceFromBackend(payload) {
-  const resp = await fetch("/api/lnurl-invoice", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  let data;
-  try {
-    data = await resp.json();
-  } catch {
-    throw new Error("Invalid response from LNURL backend");
-  }
-
-  if (!resp.ok || !data.pr) {
-    throw new Error(data.error || "LNURL invoice generation failed");
-  }
-
-  return data.pr;
-}
-
-// Backend call helper
-async function fetchInvoiceFromBackend(payload) {
   const resp = await fetch(
     "https://conpac-backend.jasonbohio.workers.dev/api/lnurl-invoice",
     {
