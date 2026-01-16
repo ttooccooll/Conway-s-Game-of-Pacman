@@ -1576,22 +1576,17 @@ const resetBtn = document.getElementById("reset-btn");
 
 startBtn.addEventListener("click", async () => {
   if (running) return;
-
   if (!canPlayGame) {
     showMessage("Payment required to continue playing ⚡");
-
     const paid = await handlePayment();
-
     if (paid) {
       canPlayGame = true;
       sessionStorage.setItem("conpacCanPlay", "true");
-
+      startBtn.disabled = false;
       startLife();
     }
-
     return;
   }
-
   startLife();
 });
 
