@@ -1574,8 +1574,15 @@ const startBtn = document.getElementById("start-btn");
 const pauseBtn = document.getElementById("pause-btn");
 const resetBtn = document.getElementById("reset-btn");
 
-startBtn.addEventListener("click", () => {
-  if (!canPlayGame || running) return;
+startBtn.addEventListener("click", async () => {
+  if (running) return;
+
+  if (!canPlayGame) {
+    showMessage("Payment required to continue playing ⚡");
+    await handlePayment(); // this will show QR if WebLN fails
+    return;
+  }
+
   startLife();
 });
 
