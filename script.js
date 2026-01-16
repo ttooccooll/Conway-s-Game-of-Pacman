@@ -1249,8 +1249,9 @@ async function renderLeaderboard() {
 }
 
 async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
+  // Step 0: always fetch fresh LNURL params
   const params = await fetchLnurlParams(lnurl);
-  console.log("LNURL params:", params);
+  console.log("LNURL fresh params:", params);
 
   if (!params || !params.callback)
     throw new Error("LNURL params missing callback URL");
@@ -1270,7 +1271,7 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
   // Helper: build payload safely
   const buildPayload = (includeComment) => {
     const payload = {
-      callback: params.callback,
+      callback: params.callback, // always fresh callback
       amount: msats,
     };
     if (
@@ -1290,7 +1291,7 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
   try {
     return await fetchInvoiceFromBackend(payload);
   } catch (err) {
-    // Step 2: retry without comment
+    // Step 2: retry without comment if first attempt fails
     if (payload.comment) {
       console.warn(
         "LNURL invoice with comment failed, retrying without comment:",
@@ -1303,6 +1304,7 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     throw err;
   }
 }
+
 
 // Backend call helper
 async function fetchInvoiceFromBackend(payload) {
