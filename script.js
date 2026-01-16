@@ -1584,6 +1584,7 @@ startBtn.addEventListener("click", async () => {
       sessionStorage.setItem("conpacCanPlay", "true");
       startBtn.disabled = false;
       await startNewGame();
+      startLife();
     }
     return;
   }
