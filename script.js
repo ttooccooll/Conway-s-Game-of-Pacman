@@ -1249,62 +1249,67 @@ async function renderLeaderboard() {
 }
 
 async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
-  // Step 0: always fetch fresh LNURL params
-  const params = await fetchLnurlParams(lnurl);
-  console.log("LNURL fresh params:", params);
-
-  if (!params || !params.callback)
-    throw new Error("LNURL params missing callback URL");
-
-  const msats = Number(amountSats) * 1000; // sats → msats
-
-  if (isNaN(msats) || msats <= 0) throw new Error("Invalid amount");
-
-  if (msats < params.minSendable || msats > params.maxSendable) {
-    throw new Error(
-      `Amount must be between ${params.minSendable / 1000} and ${
-        params.maxSendable / 1000
-      } sats`
-    );
-  }
-
-  // Helper: build payload safely
-  const buildPayload = (includeComment) => {
-    const payload = {
-      callback: params.callback, // always fresh callback
-      amount: msats,
-    };
-    if (
-      includeComment &&
-      params.commentAllowed > 0 &&
-      memo?.trim().length > 0
-    ) {
-      payload.comment = memo.trim().slice(0, params.commentAllowed);
-    }
-    return payload;
-  };
-
-  // Step 1: try with comment
-  let payload = buildPayload(true);
-  console.log("Trying LNURL invoice with comment:", payload);
+  showInvoiceWaiting("Creating Lightning invoice…");
 
   try {
-    return await fetchInvoiceFromBackend(payload);
-  } catch (err) {
-    // Step 2: retry without comment if first attempt fails
-    if (payload.comment) {
-      console.warn(
-        "LNURL invoice with comment failed, retrying without comment:",
-        err.message
+    // Step 0: always fetch fresh LNURL params
+    const params = await fetchLnurlParams(lnurl);
+    console.log("LNURL fresh params:", params);
+
+    if (!params || !params.callback)
+      throw new Error("LNURL params missing callback URL");
+
+    const msats = Number(amountSats) * 1000;
+
+    if (isNaN(msats) || msats <= 0)
+      throw new Error("Invalid amount");
+
+    if (msats < params.minSendable || msats > params.maxSendable) {
+      throw new Error(
+        `Amount must be between ${params.minSendable / 1000} and ${
+          params.maxSendable / 1000
+        } sats`
       );
-      payload = buildPayload(false);
-      console.log("Trying LNURL invoice without comment:", payload);
-      return await fetchInvoiceFromBackend(payload);
     }
-    throw err;
+
+    const buildPayload = (includeComment) => {
+      const payload = {
+        callback: params.callback,
+        amount: msats,
+      };
+      if (
+        includeComment &&
+        params.commentAllowed > 0 &&
+        memo?.trim().length > 0
+      ) {
+        payload.comment = memo.trim().slice(0, params.commentAllowed);
+      }
+      return payload;
+    };
+
+    // Step 1: try with comment
+    let payload = buildPayload(true);
+    console.log("Trying LNURL invoice with comment:", payload);
+
+    try {
+      return await fetchInvoiceFromBackend(payload);
+    } catch (err) {
+      if (payload.comment) {
+        console.warn(
+          "LNURL invoice with comment failed, retrying without comment:",
+          err.message
+        );
+        showInvoiceWaiting("Retrying without comment…");
+
+        payload = buildPayload(false);
+        return await fetchInvoiceFromBackend(payload);
+      }
+      throw err;
+    }
+  } finally {
+    hideInvoiceWaiting();
   }
 }
-
 
 // Backend call helper
 async function fetchInvoiceFromBackend(payload) {
@@ -1329,6 +1334,19 @@ async function fetchInvoiceFromBackend(payload) {
   }
 
   return data.pr;
+}
+
+function showInvoiceWaiting(message = "Creating Lightning invoice…") {
+  const el = document.getElementById("invoice-status");
+  if (!el) return;
+  el.textContent = `⏳ ${message}`;
+  el.classList.remove("hidden");
+}
+
+function hideInvoiceWaiting() {
+  const el = document.getElementById("invoice-status");
+  if (!el) return;
+  el.classList.add("hidden");
 }
 
 async function getLnurlPayUrl(lnurl, amount, memo) {
