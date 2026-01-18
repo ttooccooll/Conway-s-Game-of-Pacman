@@ -1340,13 +1340,13 @@ function showInvoiceWaiting(message = "Creating Lightning invoice…") {
   const el = document.getElementById("invoice-status");
   if (!el) return;
   el.textContent = `⏳ ${message}`;
-  el.classList.remove("hidden");
+  el.classList.remove("visually-hidden");
 }
 
 function hideInvoiceWaiting() {
   const el = document.getElementById("invoice-status");
   if (!el) return;
-  el.classList.add("hidden");
+  el.classList.add("visually-hidden");
 }
 
 async function getLnurlPayUrl(lnurl, amount, memo) {
