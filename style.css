@@ -345,6 +345,7 @@ main {
   padding: 24px;
   max-width: 400px;
   width: 90%;
+  max-height: 90%;
   text-align: center;
   color: #e0e0ff;
   text-shadow: 0 0 3px #7b68ee;
