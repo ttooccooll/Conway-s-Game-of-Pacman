@@ -473,6 +473,10 @@ main {
   margin-right: 10px;
 }
 
+.nostr-avatar {
+  object-fit: contain;
+}
+
 .leaderboard-stats {
   margin: 5px;
   font-size: medium;
