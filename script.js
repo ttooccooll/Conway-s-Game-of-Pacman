@@ -631,18 +631,9 @@ function stepLife() {
     endGame("The walls grew onto you! Watch your surroundings more next time.");
   }
 
-  // Place glider every 100 generations
-  if (generation % 100 === 0) {
-    placeGlider();
-  }
-
-  if (generation % 125 === 0) {
-    placeMWSS();
-  }
-
-  if (generation % 175 === 0) {
-    placeLWSS();
-  }
+  if (Math.random() < 0.015) placeGlider();
+  if (Math.random() < 0.008) placeLWSS();
+  if (Math.random() < 0.005) placeMWSS();
 
   drawGrid();
 
@@ -1304,7 +1295,6 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     throw err;
   }
 }
-
 
 // Backend call helper
 async function fetchInvoiceFromBackend(payload) {
