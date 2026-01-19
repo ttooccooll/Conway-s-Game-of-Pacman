@@ -274,7 +274,7 @@ function placeMWSS() {
 
   showMessage(
     "🚀 MWSS detected! A meduim sized ship is cruising through space!",
-    3000
+    3000,
   );
   return true;
 }
@@ -360,7 +360,7 @@ function drawGhost(g) {
       x + waveWidth * i + waveWidth / 2,
       y + size - size * 0.25,
       x + waveWidth * (i + 1),
-      y + size
+      y + size,
     );
   }
 
@@ -400,14 +400,14 @@ function drawGhost(g) {
     eyeY + dy * eyeRadius * 0.4,
     pupilRadius,
     0,
-    Math.PI * 2
+    Math.PI * 2,
   );
   ctx.arc(
     rightEyeX + dx * eyeRadius * 0.4,
     eyeY + dy * eyeRadius * 0.4,
     pupilRadius,
     0,
-    Math.PI * 2
+    Math.PI * 2,
   );
   ctx.fill();
 
@@ -445,7 +445,7 @@ function drawPacman() {
     cy,
     r,
     angleOffset + mouthAngle,
-    angleOffset + Math.PI * 2 - mouthAngle
+    angleOffset + Math.PI * 2 - mouthAngle,
   );
   ctx.closePath();
   ctx.fill();
@@ -508,7 +508,7 @@ function drawGrid() {
         c.y * CELL_SIZE + CELL_SIZE / 2,
         CELL_SIZE / 5,
         0,
-        Math.PI * 2
+        Math.PI * 2,
       );
       ctx.fill();
     }
@@ -927,7 +927,7 @@ function waitForPayment(paymentHash, statusEl, timeout = 5 * 60 * 1000) {
           `/api/check-invoice?paymentHash=${paymentHash}`,
           {
             cache: "no-store",
-          }
+          },
         );
 
         if (!resp.ok) throw new Error(`Invoice check failed: ${resp.status}`);
@@ -1023,7 +1023,7 @@ async function loadStats() {
   if (userId) {
     try {
       const resp = await fetch(
-        `https://conpac-backend.jasonbohio.workers.dev/api/user/${userId}`
+        `https://conpac-backend.jasonbohio.workers.dev/api/user/${userId}`,
       );
       if (resp.ok) {
         const backendStats = await resp.json();
@@ -1094,7 +1094,7 @@ async function endGame(reason = false) {
           lud16: nostr?.lud16 || null,
           lud06: nostr?.lud06 || null,
         }),
-      }
+      },
     );
 
     if (!res.ok) {
@@ -1156,7 +1156,7 @@ async function renderLeaderboard() {
 
   try {
     const resp = await fetch(
-      "https://conpac-backend.jasonbohio.workers.dev/api/leaderboard"
+      "https://conpac-backend.jasonbohio.workers.dev/api/leaderboard",
     );
 
     if (!resp.ok) throw new Error("Leaderboard fetch failed");
@@ -1190,7 +1190,8 @@ async function renderLeaderboard() {
         row.classList.add("current-player");
       }
 
-      let avatarUrl = u.picture || "/default-avatar.png";
+      const fallbackAvatar = `https://api.dicebear.com/7.x/identicon/svg?seed=Satoshi%20Nakamoto`;
+      let avatarUrl = u.picture || fallbackAvatar;
 
       if (nostr && u.username === currentUser && nostr.picture) {
         avatarUrl = nostr.picture;
@@ -1210,7 +1211,7 @@ async function renderLeaderboard() {
         src="${avatarUrl}"
         alt="${u.username}"
         loading="lazy"
-        onerror="this.src='/default-avatar.png'"
+        onerror="this.src='https://api.dicebear.com/7.x/identicon/svg?seed=Satoshi%20Nakamoto'"
       />
       <span class="leaderboard-name">${u.username}</span>
     </div>
@@ -1255,7 +1256,7 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     throw new Error(
       `Amount must be between ${params.minSendable / 1000} and ${
         params.maxSendable / 1000
-      } sats`
+      } sats`,
     );
   }
 
@@ -1286,7 +1287,7 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     if (payload.comment) {
       console.warn(
         "LNURL invoice with comment failed, retrying without comment:",
-        err.message
+        err.message,
       );
       payload = buildPayload(false);
       console.log("Trying LNURL invoice without comment:", payload);
@@ -1304,7 +1305,7 @@ async function fetchInvoiceFromBackend(payload) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    }
+    },
   );
 
   let data;
@@ -1478,7 +1479,7 @@ document.addEventListener("click", async (e) => {
       };
 
       showMessage(
-        "⚡ WebLN not available. You can scan the QR or copy the LNURL with your Lightning wallet. Note: zaps will only be recorded when using WebLN."
+        "⚡ WebLN not available. You can scan the QR or copy the LNURL with your Lightning wallet. Note: zaps will only be recorded when using WebLN.",
       );
     } catch (qrErr) {
       console.error("Failed to generate LNURL QR:", qrErr);
@@ -1673,7 +1674,7 @@ function fetchProfileFromRelays(pubkey, relays) {
             "REQ",
             "profile",
             { kinds: [0], authors: [pubkey], limit: 1 },
-          ])
+          ]),
         );
       };
 
