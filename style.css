@@ -960,4 +960,42 @@ button.purple:active {
     box-shadow: none;
   }
   header h1 {
-    displ
+    display: none;
+  }
+  main {
+    position: fixed;
+  }
+  #touch-controls {
+    position: fixed;
+    margin-bottom: 0;
+    bottom: 10px
+  }
+  #controls {
+    transform: scale(.7);
+    position: fixed;
+    margin-bottom: 0;
+    bottom: 8px;
+    display: none;
+  }
+  #life-canvas {
+    margin-top: -30px
+  }
+  #livestats {
+    position: fixed;
+    top: 10px
+  }
+}
+
+/* ---------------- Reduced Motion ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (pointer: fine) {
+  #touch-controls {
+    display: none !important;
+  }
+}
