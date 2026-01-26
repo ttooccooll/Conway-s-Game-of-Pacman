@@ -490,7 +490,8 @@ main {
 
 #nostr-username {
   margin-left: 20px;
-  font-family: MyFontc
+  font-family: MyFontc;
+  overflow: hidden;
 }
 
 button.arcade {
