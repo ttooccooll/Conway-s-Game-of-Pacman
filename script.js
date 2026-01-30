@@ -497,7 +497,6 @@ function drawGrid() {
     }
   }
 
-  // Draw collectibles
   for (const c of collectibles) {
     if (!c.collected) {
       ctx.shadowBlur = 0;
@@ -621,11 +620,10 @@ function stepLife() {
   // Remove collectibles that get covered by live cells
   for (const c of collectibles) {
     if (!c.collected && grid[c.y][c.x]) {
-      c.collected = true; // silently remove it, no score
+      c.collected = true;
     }
   }
 
-  // ⚠️ New: check if player is now on a live cell
   if (playerAlive && grid[playerY][playerX]) {
     playerAlive = false;
     endGame("The walls grew onto you! Watch your surroundings more next time.");
@@ -1063,7 +1061,6 @@ async function updateStats() {
 
   localStorage.setItem(statsKey, JSON.stringify(stats));
 
-  // Update DOM immediately
   document.getElementById("played").textContent = stats.played;
   document.getElementById("best-score").textContent = stats.best_score;
   document.getElementById("last-score").textContent = stats.last_score;
@@ -1118,7 +1115,6 @@ function movePlayer(dx, dy, dir) {
   if (newX >= 0 && newX < GRID_SIZE) playerX = newX;
   if (newY >= 0 && newY < GRID_SIZE) playerY = newY;
 
-  // Check collision with life
   if (grid[playerY][playerX]) {
     playerAlive = false;
     endGame("You were eaten by the walls! Watch out next time.");
@@ -1126,7 +1122,6 @@ function movePlayer(dx, dy, dir) {
 
   let replenishing = false;
 
-  // Check collectibles
   for (const c of collectibles) {
     if (!c.collected && c.x === playerX && c.y === playerY) {
       c.collected = true;
@@ -1163,7 +1158,6 @@ async function renderLeaderboard() {
 
     let data = await resp.json();
 
-    // Clear loading message
     el.innerHTML = "<h3>🔥 Leaderboard 🔥</h3>";
 
     if (!data || data.length === 0) {
@@ -1171,10 +1165,8 @@ async function renderLeaderboard() {
       return;
     }
 
-    // Sort players by high_score descending
     data.sort((a, b) => b.high_score - a.high_score);
 
-    // Add table header
     el.innerHTML += `
       <div class="leaderboard-header">
         <div class="leaderboard-number"></div>
@@ -1197,7 +1189,6 @@ async function renderLeaderboard() {
         avatarUrl = nostr.picture;
       }
 
-      // 👇 ADD THESE HERE
       const zapCount = u.zap_count ?? 0;
       const satsReceived = u.sats_received ?? 0;
       const zapLabel = zapCount === 1 ? "zap" : "zaps";
@@ -1241,14 +1232,13 @@ async function renderLeaderboard() {
 }
 
 async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
-  // Step 0: always fetch fresh LNURL params
   const params = await fetchLnurlParams(lnurl);
   console.log("LNURL fresh params:", params);
 
   if (!params || !params.callback)
     throw new Error("LNURL params missing callback URL");
 
-  const msats = Number(amountSats) * 1000; // sats → msats
+  const msats = Number(amountSats) * 1000;
 
   if (isNaN(msats) || msats <= 0) throw new Error("Invalid amount");
 
@@ -1260,10 +1250,9 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     );
   }
 
-  // Helper: build payload safely
   const buildPayload = (includeComment) => {
     const payload = {
-      callback: params.callback, // always fresh callback
+      callback: params.callback,
       amount: msats,
     };
     if (
@@ -1276,14 +1265,12 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
     return payload;
   };
 
-  // Step 1: try with comment
   let payload = buildPayload(true);
   console.log("Trying LNURL invoice with comment:", payload);
 
   try {
     return await fetchInvoiceFromBackend(payload);
   } catch (err) {
-    // Step 2: retry without comment if first attempt fails
     if (payload.comment) {
       console.warn(
         "LNURL invoice with comment failed, retrying without comment:",
@@ -1297,7 +1284,6 @@ async function fetchInvoiceFromLNURL(lnurl, amountSats, memo = "") {
   }
 }
 
-// Backend call helper
 async function fetchInvoiceFromBackend(payload) {
   const resp = await fetch(
     "https://conpac-backend.jasonbohio.workers.dev/api/lnurl-invoice",
@@ -1346,15 +1332,13 @@ async function fetchLnurlParams(lnurl) {
   } else {
     // lud06: bech32 LNURL
     try {
-      const decoded = bech32.decode(lnurl, 1023); // max length 1023
+      const decoded = bech32.decode(lnurl, 1023);
       const bytes = bech32.fromWords(decoded.words);
 
-      // Safe conversion of bytes → string
       url = Array.from(bytes)
         .map((b) => String.fromCharCode(b))
         .join("");
 
-      // Ensure URL starts with https://
       if (!/^https?:\/\//.test(url)) {
         url = "https://" + url;
       }
@@ -1376,7 +1360,7 @@ async function fetchLnurlParams(lnurl) {
 
 function encodeLnurl(url) {
   const words = bech32.toWords(new TextEncoder().encode(url));
-  return bech32.encode("lnurl", words, 1023); // standard LNURL prefix
+  return bech32.encode("lnurl", words, 1023);
 }
 
 async function showLnurlQR(lightningAddress) {
@@ -1387,11 +1371,9 @@ async function showLnurlQR(lightningAddress) {
     return;
   }
 
-  // Show the modal
   showModal("lnurl-modal");
 
   try {
-    // QR is just the lightning address itself
     await QRCode.toCanvas(canvas, lightningAddress, { width: 256 });
   } catch (err) {
     console.error("Failed to render QR code:", err);
