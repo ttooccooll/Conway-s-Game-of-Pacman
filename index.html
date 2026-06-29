@@ -8,23 +8,38 @@
       src="https://unpkg.com/webln@0.3.2/dist/webln.min.js"
       integrity="sha384-MpjpvOQqXz9nCoLUS/sR0bhLwGYuNPMOBN50jsqhnqAzDq0GiOI0u6oC5fHitzI2"
       crossorigin="anonymous"
+      defer
     ></script>
-    <script src="https://unpkg.com/bech32-buffer@1.0.1/dist/bech32.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-    <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
-    <script src="https://cdn.skypack.dev/@scure/base@1.1.1"></script>
+    <script src="https://unpkg.com/bech32-buffer@1.0.1/dist/bech32.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js" defer></script>
+    <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js" defer></script>
+    <script src="https://cdn.skypack.dev/@scure/base@1.1.1" defer></script>
     <script src="script.js" defer></script>
     <link rel="stylesheet" id="stylesheet" href="style.css" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
     <meta name="description" content="Conway's Game of Pacman - Play pacman, but the walls are evolving as Jon Conway's Game of Life.">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#000000">
+    <meta property="og:title" content="Conway's Game of Pacman">
+    <meta property="og:description" content="Play pacman, but the walls are evolving as Conway's Game of Life. Bitcoin Lightning payments, Nostr login, and retro arcade fun!">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://conwaysgameofpacman.xyz/">
+    <meta property="og:image" content="https://conwaysgameofpacman.xyz/pac.png">
+    <meta property="og:image:width" content="256">
+    <meta property="og:image:height" content="256">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Conway's Game of Pacman">
+    <meta name="twitter:description" content="Play pacman, but the walls are evolving as Conway's Game of Life.">
+    <meta name="twitter:image" content="https://conwaysgameofpacman.xyz/pac.png">
+    <meta name="twitter:image:alt" content="Conway's Game of Pacman gameplay">
     <link rel="canonical" href="https://conwaysgameofpacman.xyz/" />
     <script type="application/ld+json">
         {
             "@context": "https://schema.org",
             "@type": "VideoGame",
-            "name": "Turtle",
+            "name": "Conway's Game of Pacman",
             "description": "Conway's Game of Pacman - Play pacman, but the walls are evolving as Jon Conway's Game of Life.",
             "genre": ["Arcade", "Munchy"],
             "applicationCategory": "Game",
@@ -36,6 +51,14 @@
                 "price": "0",
                 "priceCurrency": "USD"
             }
+        }
+    </script>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "Conway's Game of Pacman",
+            "url": "https://conwaysgameofpacman.xyz/"
         }
     </script>
   </head>
@@ -102,7 +125,7 @@
       <div class="modal-content">
         <h2></h2>
         <div id="nostr-profile" style="margin-top:12px; display:none;">
-          <img id="nostr-avatar" style="width:78px; height:78px; border-radius:50%;" />
+          <img id="nostr-avatar" alt="Nostr user avatar" style="width:78px; height:78px; border-radius:50%;" />
           <div id="nostr-username"></div>
         </div>
         <div class="stats-grid">
