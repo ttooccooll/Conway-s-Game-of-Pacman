@@ -416,19 +416,38 @@ main {
 }
 
 /* ---------------- Share on Nostr ---------------- */
+/* The two stacked CTAs share one footprint so the card reads as a column */
+#continue-btn,
+#share-nostr-btn {
+  min-width: 240px;
+  max-width: 100%;
+}
+
 #share-nostr-btn {
   display: block;
-  margin: 10px auto 0;
-  background: linear-gradient(135deg, #662482, #9b4dca);
+  margin: 12px auto 0;
+  background: linear-gradient(135deg, #9b4dff, #d67aff);
   color: #fff;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.35);
 }
 #share-nostr-btn:hover {
-  box-shadow: 0 0 20px #9b4dca, 0 0 40px #662482;
+  box-shadow: 0 0 20px #d67aff, 0 0 40px #9b4dff;
 }
 #share-nostr-btn:disabled {
-  opacity: 0.6;
-  cursor: default;
+  opacity: 0.75;
+  cursor: wait;
   transform: none;
+  box-shadow: none;
+}
+/* Success state: quiet outline instead of a dimmed gradient */
+#share-nostr-btn.is-shared,
+#share-nostr-btn.is-shared:disabled {
+  background: transparent;
+  border: 1px solid #b06ef7;
+  color: #c88fff;
+  text-shadow: 0 0 8px #9b4dff;
+  opacity: 1;
+  cursor: default;
   box-shadow: none;
 }
 

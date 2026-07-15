@@ -1303,7 +1303,8 @@ async function shareScoreToNostr(btn) {
       if (accepted === 0) throw new Error("No relay accepted the note");
 
       sfx.payment();
-      btn.textContent = "Shared 🟣";
+      btn.textContent = "Shared ✓";
+      btn.classList.add("is-shared");
       showMessage(
         `Score shared to Nostr (${accepted} relay${accepted === 1 ? "" : "s"}) 🟣`,
       );
