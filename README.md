@@ -33,8 +33,12 @@ A wildly unique arcade game that combines John Conway's Game of Life with classi
 ### Objective
 
 Score as high as possible before getting caught by:
-- **The Ghosts**: 6 chase you relentlessly (always invincible - you can't eat them)
+- **The Ghosts**: 6 hunters, each with its own personality (always invincible - you can't eat them)
 - **The Walls**: Conway's Game of Life cells that will kill you if they grow onto your position
+
+The arena is a torus: run off any edge and you reappear on the opposite side. The ghosts, the walls, and the gliders all wrap around too.
+
+Died? You can **continue right where you fell for 21 sats** — your score and board survive, the nearby walls clear, and the ghosts scatter.
 
 ---
 
@@ -57,7 +61,9 @@ The game occasionally spawns gliders and spaceships from the corners to keep thi
 ### Speed Progression
 
 - Game starts at **300ms per generation**
-- After **500 total score**, speed increases to **210ms per generation**
+- Every **100 total score** shaves **15ms** off the generation time
+- Caps at **150ms per generation** (double speed) around 1000 total score
+- Gliders and spaceships also spawn more frequently the longer you survive (up to 3x)
 
 ### Free vs Paid Games
 
@@ -70,11 +76,20 @@ The game occasionally spawns gliders and spaceships from the corners to keep thi
 ## Features
 
 ### Core Gameplay
-- 40x40 grid arena
-- 6 ghosts with independent AI (40% random movement to be unpredictable)
+- 40x40 wrap-around (toroidal) grid arena
+- 6 ghosts with distinct personalities:
+  - **Chaser** (red): heads straight for you
+  - **Ambusher** (magenta): aims ahead of your current direction
+  - **Flanker** (cyan): pincers you from the chaser's opposite side
+  - **Stalker** (blue): follows the trail you leave behind
+  - **Patroller** (orange): chases when far, retreats to its corner when close
+  - **Wanderer** (green): drifts unpredictably
+  - Each ghost's pupils look toward its current target
 - 500 collectible bitcoin (dots)
 - Auto-replenishing collectibles (adds 200 more when 10 remain)
 - Pause/Resume/Reset controls
+- Continue after death for 21 sats (score and board preserved)
+- Retro synth sound effects with a mute toggle (persisted)
 
 ### User Accounts (Nostr)
 - Login with **any npub** (no password needed)
@@ -179,6 +194,7 @@ See the live site for the production backend implementation.
 | Start Button | Begin new game |
 | Pause Button | Pause/resume |
 | Reset Button | Reset grid |
+| 🔊 Button | Mute/unmute sound |
 
 ---
 
@@ -198,9 +214,10 @@ Update score display
 
 ### Ghost AI
 
-- Pathfinding: Minimizes Manhattan distance to player
-- Randomness: 40% chance to move randomly
-- Wall avoidance: Cannot traverse live cells
+- Each ghost computes a personality-specific target (player, ahead of player, flank point, trail, or home corner)
+- Pathfinding: minimizes toroidal Manhattan distance to its target
+- Randomness: per-personality (15% for the chaser up to 75% for the wanderer)
+- Wall avoidance: cannot traverse live cells; can wrap around edges
 
 ### Payment Flow
 

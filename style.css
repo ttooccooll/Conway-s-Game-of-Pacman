@@ -100,6 +100,16 @@ strong {
   right: 0;
 }
 
+/* Desktop: float in the bottom-right corner, clear of the centered layout */
+#mute-btn {
+  position: fixed;
+  bottom: 18px;
+  right: 18px;
+  font-size: 20px;
+  z-index: 1500;
+  filter: drop-shadow(0 0 6px #7b68ee);
+}
+
 li, .helpp {
   text-align: left;
   margin: 3px;
@@ -381,6 +391,28 @@ main {
 }
 .modal-content button:active {
   transform: scale(0.95);
+}
+
+/* ---------------- Continue (extra life) ---------------- */
+#continue-btn {
+  display: block;
+  margin: 12px auto 0;
+  background: linear-gradient(135deg, #f7931a, #ffd700);
+  color: #1a1a1a;
+}
+#continue-btn:hover {
+  box-shadow: 0 0 20px #ffd700, 0 0 40px #f7931a;
+}
+#continue-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+  transform: none;
+  box-shadow: none;
+}
+.continue-note {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 8px;
 }
 
 /* ---------------- Tip Button ---------------- */
@@ -984,6 +1016,14 @@ button.purple:active {
   #livestats {
     position: fixed;
     top: 10px
+  }
+  /* Mobile: bottom-left corner, above the sign-in bar, clear of the d-pad */
+  #mute-btn {
+    position: fixed;
+    bottom: 62px;
+    left: 10px;
+    right: auto;
+    font-size: 17px;
   }
 }
 

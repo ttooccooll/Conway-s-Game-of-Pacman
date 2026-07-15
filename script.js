@@ -1,6 +1,33 @@
 const CELL_SIZE = 14;
 const GRID_SIZE = 40;
 
+// The arena is a torus: leaving one edge re-enters the opposite side.
+function wrap(v) {
+  return (v + GRID_SIZE) % GRID_SIZE;
+}
+
+function toroidalDelta(from, to) {
+  let d = to - from;
+  if (d > GRID_SIZE / 2) d -= GRID_SIZE;
+  if (d < -GRID_SIZE / 2) d += GRID_SIZE;
+  return d;
+}
+
+function toroidalDistance(x1, y1, x2, y2) {
+  return Math.abs(toroidalDelta(x1, x2)) + Math.abs(toroidalDelta(y1, y2));
+}
+
+const DIR_VECTORS = {
+  up: { dx: 0, dy: -1 },
+  down: { dx: 0, dy: 1 },
+  left: { dx: -1, dy: 0 },
+  right: { dx: 1, dy: 0 },
+};
+
+// Recent player positions, oldest first — the stalker ghost follows this trail
+let playerTrail = [];
+const TRAIL_LENGTH = 10;
+
 let collectibles = [];
 const NUM_COLLECTIBLES = 500;
 
@@ -68,6 +95,92 @@ const GHOST_MIN_DISTANCE = 8; // tiles away from player
 const canvas = document.getElementById("life-canvas");
 const ctx = canvas.getContext("2d");
 
+const sfx = (() => {
+  let audioCtx = null;
+  let muted = localStorage.getItem("conpacMuted") === "true";
+  let wakaHigh = false;
+
+  function ctxReady() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (!audioCtx) audioCtx = new AC();
+    if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+    return audioCtx;
+  }
+
+  function tone(freq, endFreq, duration, type = "square", gain = 0.12, delay = 0) {
+    if (muted) return;
+    const ac = ctxReady();
+    if (!ac) return;
+    const t0 = ac.currentTime + delay;
+    const osc = ac.createOscillator();
+    const g = ac.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(endFreq, 1), t0 + duration);
+    g.gain.setValueAtTime(gain, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(g);
+    g.connect(ac.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.05);
+  }
+
+  function clip(src, volume = 0.5, delayMs = 0) {
+    if (muted) return;
+    setTimeout(() => {
+      try {
+        const a = new Audio(src);
+        a.volume = volume;
+        a.play().catch(() => {});
+      } catch (err) {
+        /* audio is never critical */
+      }
+    }, delayMs);
+  }
+
+  return {
+    unlock: ctxReady,
+    isMuted: () => muted,
+    setMuted(value) {
+      muted = value;
+      localStorage.setItem("conpacMuted", value ? "true" : "false");
+    },
+    chomp() {
+      wakaHigh = !wakaHigh;
+      if (wakaHigh) tone(540, 360, 0.07, "square", 0.06);
+      else tone(360, 540, 0.07, "square", 0.06);
+    },
+    death() {
+      tone(600, 55, 0.7, "sawtooth", 0.14);
+      clip("kingm.mp3", 0.5, 750);
+    },
+    start() {
+      [392, 523, 659, 784].forEach((f, i) => tone(f, f, 0.1, "square", 0.1, i * 0.1));
+    },
+    revive() {
+      [330, 415, 495, 660].forEach((f, i) => tone(f, f, 0.09, "triangle", 0.12, i * 0.08));
+      clip("kings.mp3", 0.5, 350);
+    },
+    payment() {
+      tone(880, 880, 0.08, "square", 0.1);
+      tone(1320, 1320, 0.14, "square", 0.1, 0.09);
+    },
+    speedup() {
+      tone(440, 440, 0.06, "square", 0.09);
+      tone(660, 660, 0.06, "square", 0.09, 0.07);
+    },
+    ship() {
+      tone(180, 950, 0.3, "triangle", 0.07);
+    },
+  };
+})();
+
+// Browsers only allow audio after a user gesture — unlock on the first one
+["pointerdown", "keydown"].forEach((evt) =>
+  document.addEventListener(evt, () => sfx.unlock(), { once: true }),
+);
+
 let lastMoveTime = 0;
 const MOVE_COOLDOWN = 150; // ms
 
@@ -134,6 +247,7 @@ function initGrid() {
   playerX = Math.floor(GRID_SIZE / 2);
   playerY = Math.floor(GRID_SIZE / 2);
   playerAlive = true;
+  playerTrail = [];
 
   // Clear the grid
   grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(0));
@@ -159,33 +273,72 @@ function initGrid() {
   drawGrid();
 }
 
+// Each ghost hunts differently. randomness = odds of ignoring its plan that tick.
+const GHOST_ROLES = [
+  { name: "chaser", color: "#ff0000", randomness: 0.15 }, // heads straight for you
+  { name: "ambusher", color: "#ff00ff", randomness: 0.2 }, // aims ahead of your direction
+  { name: "flanker", color: "#00ffff", randomness: 0.22 }, // pincers from the chaser's far side
+  { name: "stalker", color: "#0000ff", randomness: 0.25 }, // follows the trail you leave
+  { name: "patroller", color: "#ffaa00", randomness: 0.25 }, // chases when far, retreats when close
+  { name: "wanderer", color: "#00ff00", randomness: 0.75 }, // mostly drifts at random
+];
+
+const GHOST_CORNERS = [
+  { x: 0, y: 0 },
+  { x: GRID_SIZE - 1, y: 0 },
+  { x: 0, y: GRID_SIZE - 1 },
+  { x: GRID_SIZE - 1, y: GRID_SIZE - 1 },
+];
+
 function initGhosts() {
   ghosts = [];
   let placed = 0;
-
-  const colors = [
-    "#ff0000",
-    "#00ff00",
-    "#0000ff",
-    "#ff00ff",
-    "#00ffff",
-    "#ffaa00",
-  ];
 
   while (placed < NUM_GHOSTS) {
     const x = Math.floor(Math.random() * GRID_SIZE);
     const y = Math.floor(Math.random() * GRID_SIZE);
 
-    const dist = Math.hypot(x - playerX, y - playerY);
+    const dist = toroidalDistance(x, y, playerX, playerY);
 
     if (!grid[y][x] && dist >= GHOST_MIN_DISTANCE) {
+      const role = GHOST_ROLES[placed % GHOST_ROLES.length];
       ghosts.push({
         x,
         y,
-        color: colors[placed % colors.length],
+        color: role.color,
+        name: role.name,
+        randomness: role.randomness,
+        home: GHOST_CORNERS[placed % GHOST_CORNERS.length],
       });
       placed++;
     }
+  }
+}
+
+function ghostTarget(g) {
+  switch (g.name) {
+    case "ambusher": {
+      const v = DIR_VECTORS[playerDir] || DIR_VECTORS.right;
+      return { x: wrap(playerX + v.dx * 4), y: wrap(playerY + v.dy * 4) };
+    }
+    case "flanker": {
+      const chaser = ghosts.find((o) => o.name === "chaser") || g;
+      return {
+        x: wrap(playerX + toroidalDelta(chaser.x, playerX)),
+        y: wrap(playerY + toroidalDelta(chaser.y, playerY)),
+      };
+    }
+    case "stalker": {
+      const oldest = playerTrail[0];
+      return oldest ? { x: oldest.x, y: oldest.y } : { x: playerX, y: playerY };
+    }
+    case "patroller":
+      return toroidalDistance(g.x, g.y, playerX, playerY) > 8
+        ? { x: playerX, y: playerY }
+        : g.home;
+    default:
+      // chaser and wanderer both aim at the player (wanderer rarely follows through)
+      return { x: playerX, y: playerY };
   }
 }
 
@@ -232,6 +385,7 @@ function placeGlider() {
   }
 
   showMessage("⚡ A glider has entered the arena! Watch it soar!", 3000);
+  sfx.ship();
   return true;
 }
 
@@ -276,6 +430,7 @@ function placeMWSS() {
     "🚀 MWSS detected! A meduim sized ship is cruising through space!",
     3000,
   );
+  sfx.ship();
   return true;
 }
 
@@ -317,6 +472,7 @@ function placeLWSS() {
   }
 
   showMessage("🛸 LWSS incoming! Fast-moving debris detected!", 3000);
+  sfx.ship();
   return true;
 }
 
@@ -384,8 +540,9 @@ function drawGhost(g) {
   const rightEyeX = x + size * 0.65;
   const eyeY = y + size * 0.45;
 
-  const dx = Math.sign(playerX - g.x);
-  const dy = Math.sign(playerY - g.y);
+  // Pupils look toward this ghost's current target — hints at its personality
+  const dx = Math.sign(toroidalDelta(g.x, g.targetX ?? playerX));
+  const dy = Math.sign(toroidalDelta(g.y, g.targetY ?? playerY));
 
   ctx.fillStyle = "white";
   ctx.beginPath();
@@ -465,29 +622,30 @@ function drawGrid() {
         ctx.strokeStyle = "#172aa1ff"; // wall color
         ctx.lineWidth = 3;
 
+        // Neighbors wrap around the torus, so edge cells check the far side
         // top
-        if (y === 0 || !grid[y - 1][x]) {
+        if (!grid[wrap(y - 1)][x]) {
           ctx.beginPath();
           ctx.moveTo(x * CELL_SIZE, y * CELL_SIZE);
           ctx.lineTo((x + 1) * CELL_SIZE, y * CELL_SIZE);
           ctx.stroke();
         }
         // bottom
-        if (y === GRID_SIZE - 1 || !grid[y + 1][x]) {
+        if (!grid[wrap(y + 1)][x]) {
           ctx.beginPath();
           ctx.moveTo(x * CELL_SIZE, (y + 1) * CELL_SIZE);
           ctx.lineTo((x + 1) * CELL_SIZE, (y + 1) * CELL_SIZE);
           ctx.stroke();
         }
         // left
-        if (x === 0 || !grid[y][x - 1]) {
+        if (!grid[y][wrap(x - 1)]) {
           ctx.beginPath();
           ctx.moveTo(x * CELL_SIZE, y * CELL_SIZE);
           ctx.lineTo(x * CELL_SIZE, (y + 1) * CELL_SIZE);
           ctx.stroke();
         }
         // right
-        if (x === GRID_SIZE - 1 || !grid[y][x + 1]) {
+        if (!grid[y][wrap(x + 1)]) {
           ctx.beginPath();
           ctx.moveTo((x + 1) * CELL_SIZE, y * CELL_SIZE);
           ctx.lineTo((x + 1) * CELL_SIZE, (y + 1) * CELL_SIZE);
@@ -528,58 +686,45 @@ function drawGrid() {
 }
 
 function moveGhosts() {
+  const directions = [
+    { dx: 0, dy: -1 }, // up
+    { dx: 0, dy: 1 }, // down
+    { dx: -1, dy: 0 }, // left
+    { dx: 1, dy: 0 }, // right
+  ];
+
   for (const g of ghosts) {
     if (!playerAlive) return;
 
-    let bestMove = { dx: 0, dy: 0 };
-    let minDist = Infinity;
+    const target = ghostTarget(g);
+    g.targetX = target.x;
+    g.targetY = target.y;
 
-    // Try all 4 directions
-    const directions = [
-      { dx: 0, dy: -1 }, // up
-      { dx: 0, dy: 1 }, // down
-      { dx: -1, dy: 0 }, // left
-      { dx: 1, dy: 0 }, // right
-    ];
+    // Ghosts can wrap around edges too; walls (live cells) block them
+    const possibleMoves = directions.filter(
+      (dir) => !grid[wrap(g.y + dir.dy)][wrap(g.x + dir.dx)],
+    );
+    if (possibleMoves.length === 0) continue; // boxed in — stay put
 
-    for (const dir of directions) {
-      const newX = g.x + dir.dx;
-      const newY = g.y + dir.dy;
-
-      // Check bounds and walls
-      if (newX < 0 || newX >= GRID_SIZE || newY < 0 || newY >= GRID_SIZE)
-        continue;
-      if (grid[newY][newX]) continue; // can't go through live cells (walls)
-
-      // Manhattan distance to player
-      const dist = Math.abs(playerX - newX) + Math.abs(playerY - newY);
-      if (dist < minDist) {
-        minDist = dist;
-        bestMove = dir;
+    let bestMove;
+    if (Math.random() < g.randomness) {
+      bestMove =
+        possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    } else {
+      let minDist = Infinity;
+      for (const dir of possibleMoves) {
+        const nx = wrap(g.x + dir.dx);
+        const ny = wrap(g.y + dir.dy);
+        const dist = toroidalDistance(nx, ny, target.x, target.y);
+        if (dist < minDist) {
+          minDist = dist;
+          bestMove = dir;
+        }
       }
     }
 
-    // 40% chance to ignore optimal move and move randomly
-    if (Math.random() < 0.4) {
-      const possibleMoves = directions.filter((dir) => {
-        const nx = g.x + dir.dx;
-        const ny = g.y + dir.dy;
-        return (
-          nx >= 0 &&
-          nx < GRID_SIZE &&
-          ny >= 0 &&
-          ny < GRID_SIZE &&
-          !grid[ny][nx]
-        );
-      });
-      if (possibleMoves.length > 0) {
-        bestMove =
-          possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-      }
-    }
-
-    g.x += bestMove.dx;
-    g.y += bestMove.dy;
+    g.x = wrap(g.x + bestMove.dx);
+    g.y = wrap(g.y + bestMove.dy);
 
     // Check collision with player
     if (g.x === playerX && g.y === playerY) {
@@ -595,12 +740,16 @@ function stepLife() {
   updateScoreDisplay();
   const next = grid.map((row) => [...row]);
 
-  // Speed up game after 500 total score
-  if (getTotalScore() > 500 && lifeSpeed === 300) {
-    lifeSpeed = 210; // faster
-    clearInterval(lifeInterval);
-    lifeInterval = setInterval(stepLife, lifeSpeed);
-    showMessage("🔥 Game speed increased!", 2000);
+  // Speed ramps smoothly with score instead of one big jump
+  const targetSpeed = currentLifeSpeed();
+  if (targetSpeed !== lifeSpeed) {
+    lifeSpeed = targetSpeed;
+    if (running) {
+      clearInterval(lifeInterval);
+      lifeInterval = setInterval(stepLife, lifeSpeed);
+    }
+    showMessage("🔥 Game speed increased!", 1500);
+    sfx.speedup();
   }
 
   for (let y = 0; y < GRID_SIZE; y++) {
@@ -629,23 +778,40 @@ function stepLife() {
     endGame("The walls grew onto you! Watch your surroundings more next time.");
   }
 
-  if (Math.random() < 0.015) placeGlider();
-  if (Math.random() < 0.008) placeLWSS();
-  if (Math.random() < 0.005) placeMWSS();
+  // Gliders and ships spawn more often the longer you survive (up to 3x)
+  const spawnRamp = Math.min(3, 1 + generation / 400);
+  if (Math.random() < 0.015 * spawnRamp) placeGlider();
+  if (Math.random() < 0.008 * spawnRamp) placeLWSS();
+  if (Math.random() < 0.005 * spawnRamp) placeMWSS();
 
   drawGrid();
 
   if (grid.flat().every((c) => c === 0)) {
-    endGame("You have experienced the slow death of the universe.");
+    endGame("You have experienced the slow death of the universe.", {
+      recoverable: false,
+    });
   }
 }
 
 let gameOver = false;
 let activeTimeouts = [];
 let canPlayGame = false;
+// True once this run has been counted in stats — continues don't recount it
+let statsRecorded = false;
 
 function getTotalScore() {
   return score + generation;
+}
+
+const BASE_LIFE_SPEED = 300;
+const MIN_LIFE_SPEED = 150;
+
+// 300ms at the start, 15ms faster per 100 points, capped at 150ms
+function currentLifeSpeed() {
+  return Math.max(
+    MIN_LIFE_SPEED,
+    BASE_LIFE_SPEED - Math.floor(getTotalScore() / 100) * 15,
+  );
 }
 
 canPlayGame = sessionStorage.getItem("conpacCanPlay") === "true";
@@ -741,6 +907,8 @@ async function startNewGame() {
   running = false;
   clearInterval(lifeInterval);
   canPlayGame = false;
+  statsRecorded = false;
+  lifeSpeed = BASE_LIFE_SPEED;
   activeTimeouts.forEach(clearTimeout);
   activeTimeouts = [];
 
@@ -817,11 +985,11 @@ async function payInvoice(paymentRequest) {
   }
 }
 
-async function payWithQR(amountSats) {
+async function payWithQR(amountSats, memo) {
   const tipBtn = document.getElementById("tip-btn");
   tipBtn.disabled = true;
   const usernameSafe = localStorage.getItem("conpacUsername") || "Anonymous";
-  const memo = `Conpac Game Payment - ${usernameSafe}`;
+  memo = memo || `Conpac Game Payment - ${usernameSafe}`;
 
   try {
     const resp = await fetch("/api/create-invoice", {
@@ -891,6 +1059,7 @@ async function payWithQR(amountSats) {
 
     const paid = await waitForPayment(paymentHash, statusEl);
     if (paid) {
+      sfx.payment();
       showMessage("Payment received! Thank you!");
       closeModal("payment-qr-modal");
       tipBtn.disabled = false;
@@ -968,6 +1137,7 @@ async function handlePayment() {
       try {
         const invoice = await generateInvoice(100);
         await payInvoice(invoice);
+        sfx.payment();
         showMessage("Payment received! Game unlocked ⚡");
         tipBtn.disabled = false;
         return true;
@@ -997,7 +1167,7 @@ function closeModal(modalId) {
   document.getElementById(modalId).classList.remove("show");
 }
 
-function showGameOver(reason = "") {
+function showGameOver(reason = "", { recoverable = true } = {}) {
   const title = document.getElementById("game-over-title");
   const message = document.getElementById("game-over-message");
   const answerDiv = document.getElementById("game-over-answer");
@@ -1010,7 +1180,100 @@ function showGameOver(reason = "") {
     reason || "You have experienced the slow death of the universe.";
   answerDiv.innerHTML = "";
 
+  if (recoverable) {
+    const continueBtn = document.createElement("button");
+    continueBtn.id = "continue-btn";
+    continueBtn.textContent = "⚡ Continue for 21 sats";
+    continueBtn.onclick = () => attemptContinue(continueBtn);
+    answerDiv.appendChild(continueBtn);
+
+    const note = document.createElement("p");
+    note.className = "continue-note";
+    note.textContent = "Keep your score and board — the ghosts scatter.";
+    answerDiv.appendChild(note);
+  }
+
   showModal("game-over-modal");
+}
+
+async function attemptContinue(btn) {
+  btn.disabled = true;
+  btn.textContent = "Creating invoice…";
+
+  try {
+    let paid = false;
+
+    if (typeof WebLN !== "undefined") {
+      try {
+        const invoice = await generateInvoice(21);
+        await payInvoice(invoice);
+        paid = true;
+      } catch (weblnErr) {
+        console.warn("WebLN continue failed, falling back to QR:", weblnErr);
+      }
+    }
+
+    if (!paid) {
+      paid = await payWithQR(21);
+      // payWithQR's close button hides the game-over modal — bring it back
+      if (!paid) showModal("game-over-modal");
+    }
+
+    if (paid) {
+      revivePlayer();
+      return;
+    }
+  } catch (err) {
+    console.error("Continue failed:", err);
+    showError("Payment failed. Please try again.");
+  }
+
+  btn.disabled = false;
+  btn.textContent = "⚡ Continue for 21 sats";
+}
+
+function relocateGhost(g) {
+  for (let tries = 0; tries < 400; tries++) {
+    const x = Math.floor(Math.random() * GRID_SIZE);
+    const y = Math.floor(Math.random() * GRID_SIZE);
+    if (
+      !grid[y][x] &&
+      toroidalDistance(x, y, playerX, playerY) >= GHOST_MIN_DISTANCE
+    ) {
+      g.x = x;
+      g.y = y;
+      return;
+    }
+  }
+}
+
+function revivePlayer() {
+  // Clear the walls around where you fell
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      grid[wrap(playerY + dy)][wrap(playerX + dx)] = 0;
+    }
+  }
+
+  // Scatter any ghost that is too close
+  for (const g of ghosts) {
+    if (toroidalDistance(g.x, g.y, playerX, playerY) < GHOST_MIN_DISTANCE) {
+      relocateGhost(g);
+    }
+  }
+
+  playerAlive = true;
+  gameOver = false;
+  canPlayGame = true;
+  sessionStorage.setItem("conpacCanPlay", "true");
+  playerTrail = [];
+
+  closeModal("payment-qr-modal");
+  closeModal("game-over-modal");
+  sfx.revive();
+  drawGrid();
+  updateScoreDisplay();
+  showMessage("⚡ Second life! Move to resume.", 3000);
 }
 
 async function loadStats() {
@@ -1045,7 +1308,7 @@ async function loadStats() {
   document.getElementById("last-score").textContent = stats.last_score;
 }
 
-async function updateStats() {
+async function updateStats(countGame = true) {
   const statsKey = "conpacStats";
   const finalScore = getTotalScore();
 
@@ -1055,7 +1318,7 @@ async function updateStats() {
     last_score: 0,
   };
 
-  stats.played++;
+  if (countGame) stats.played++;
   stats.last_score = finalScore;
   stats.best_score = Math.max(stats.best_score, finalScore);
 
@@ -1066,16 +1329,16 @@ async function updateStats() {
   document.getElementById("last-score").textContent = stats.last_score;
 }
 
-function pauseLife() {
-  running = false;
-  clearInterval(lifeInterval);
-}
-
-async function endGame(reason = false) {
+async function endGame(reason = "", { recoverable = true } = {}) {
   pauseLife();
   gameOver = true;
-  await updateStats();
-  showGameOver(`${reason} Score: ${getTotalScore()}`);
+  playerAlive = false;
+  sfx.death();
+
+  const countGame = !statsRecorded;
+  statsRecorded = true;
+  await updateStats(countGame);
+  showGameOver(`${reason} Score: ${getTotalScore()}`, { recoverable });
   const nostr = JSON.parse(localStorage.getItem("conpacNostr") || "null");
   try {
     const res = await fetch(
@@ -1109,11 +1372,11 @@ function movePlayer(dx, dy, dir) {
 
   playerDir = dir;
 
-  const newX = playerX + dx;
-  const newY = playerY + dy;
+  playerX = wrap(playerX + dx);
+  playerY = wrap(playerY + dy);
 
-  if (newX >= 0 && newX < GRID_SIZE) playerX = newX;
-  if (newY >= 0 && newY < GRID_SIZE) playerY = newY;
+  playerTrail.push({ x: playerX, y: playerY });
+  if (playerTrail.length > TRAIL_LENGTH) playerTrail.shift();
 
   if (grid[playerY][playerX]) {
     playerAlive = false;
@@ -1126,6 +1389,7 @@ function movePlayer(dx, dy, dir) {
     if (!c.collected && c.x === playerX && c.y === playerY) {
       c.collected = true;
       score += 5;
+      sfx.chomp();
 
       const remaining = collectibles.filter((c) => !c.collected).length;
 
@@ -1516,6 +1780,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   document
     .getElementById("username-btn")
     .addEventListener("click", () => showModal("username-modal"));
+
+  const muteBtn = document.getElementById("mute-btn");
+  if (muteBtn) {
+    const renderMuteState = () => {
+      muteBtn.textContent = sfx.isMuted() ? "🔇" : "🔊";
+      muteBtn.setAttribute("aria-pressed", sfx.isMuted() ? "true" : "false");
+    };
+    renderMuteState();
+    muteBtn.addEventListener("click", () => {
+      sfx.setMuted(!sfx.isMuted());
+      renderMuteState();
+      if (!sfx.isMuted()) sfx.speedup(); // audible feedback on unmute
+    });
+  }
+
   startNewGame();
 });
 
@@ -1526,6 +1805,7 @@ document.getElementById("tip-btn").addEventListener("click", async () => {
   try {
     const invoiceTip = await generateInvoice(10000);
     await payInvoice(invoiceTip);
+    sfx.payment();
     showMessage("Thank you for the 10,000 sats tip 💛");
   } catch (err) {
     console.error("Tip payment failed:", err);
@@ -1569,11 +1849,7 @@ function countNeighbors(x, y) {
   for (let dy = -1; dy <= 1; dy++) {
     for (let dx = -1; dx <= 1; dx++) {
       if (dx === 0 && dy === 0) continue;
-      const nx = x + dx;
-      const ny = y + dy;
-      if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE) {
-        count += grid[ny][nx];
-      }
+      count += grid[wrap(y + dy)][wrap(x + dx)];
     }
   }
   return count;
@@ -1582,6 +1858,7 @@ function countNeighbors(x, y) {
 function startLife() {
   if (!canPlayGame || running) return;
 
+  if (generation === 0) sfx.start();
   running = true;
   lifeInterval = setInterval(stepLife, lifeSpeed);
   startBtn.disabled = true;
