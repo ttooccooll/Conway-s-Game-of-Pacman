@@ -770,7 +770,7 @@ async function startNewGame() {
   closeModal("game-over-modal");
 }
 
-async function generateInvoiceForBlink(amountSats) {
+async function generateInvoice(amountSats) {
   try {
     const usernameSafe = localStorage.getItem("conpacUsername") || "Anonymous";
     const resp = await fetch("/api/create-invoice", {
@@ -966,7 +966,7 @@ async function handlePayment() {
   try {
     if (typeof WebLN !== "undefined") {
       try {
-        const invoice = await generateInvoiceForBlink(100);
+        const invoice = await generateInvoice(100);
         await payInvoice(invoice);
         showMessage("Payment received! Game unlocked ⚡");
         tipBtn.disabled = false;
@@ -1524,7 +1524,7 @@ document.getElementById("tip-btn").addEventListener("click", async () => {
   tipBtn.disabled = true;
 
   try {
-    const invoiceTip = await generateInvoiceForBlink(10000);
+    const invoiceTip = await generateInvoice(10000);
     await payInvoice(invoiceTip);
     showMessage("Thank you for the 10,000 sats tip 💛");
   } catch (err) {

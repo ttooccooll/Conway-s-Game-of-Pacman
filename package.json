@@ -2,8 +2,11 @@
   "name": "conwaypac",
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "dependencies": {
-    "node-fetch": "^3.3.1"
+    "@getalby/sdk": "^8.0.3"
   },
   "scripts": {
     "start": "node index.js"
