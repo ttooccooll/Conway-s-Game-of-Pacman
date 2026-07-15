@@ -415,6 +415,23 @@ main {
   margin-top: 8px;
 }
 
+/* ---------------- Share on Nostr ---------------- */
+#share-nostr-btn {
+  display: block;
+  margin: 10px auto 0;
+  background: linear-gradient(135deg, #662482, #9b4dca);
+  color: #fff;
+}
+#share-nostr-btn:hover {
+  box-shadow: 0 0 20px #9b4dca, 0 0 40px #662482;
+}
+#share-nostr-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
 /* ---------------- Tip Button ---------------- */
 #tip-btn {
   background: linear-gradient(135deg, #7b68ee, #00bfff);

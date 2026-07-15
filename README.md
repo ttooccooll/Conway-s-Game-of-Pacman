@@ -95,6 +95,9 @@ The game occasionally spawns gliders and spaceships from the corners to keep thi
 - Login with **any npub** (no password needed)
 - Profile fetched from Nostr relays (damus.io, snort.social, nostr.wine)
 - Username, avatar, and Lightning address support
+- **Share your score to Nostr** from the game-over screen — signs a note
+  with your NIP-07 extension and publishes to the relays (falls back to
+  copying the text if no extension is installed)
 
 ### Lightning Integration
 - **WebLN**: Browser extension payment support

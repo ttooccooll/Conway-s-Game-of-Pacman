@@ -28,6 +28,14 @@ const DIR_VECTORS = {
 let playerTrail = [];
 const TRAIL_LENGTH = 10;
 
+const NOSTR_RELAYS = [
+  "wss://relay.damus.io",
+  "wss://relay.snort.social",
+  "wss://nostr.wine",
+];
+
+const GAME_URL = "https://conwaysgameofpacman.xyz";
+
 let collectibles = [];
 const NUM_COLLECTIBLES = 500;
 
@@ -1193,7 +1201,126 @@ function showGameOver(reason = "", { recoverable = true } = {}) {
     answerDiv.appendChild(note);
   }
 
+  const shareBtn = document.createElement("button");
+  shareBtn.id = "share-nostr-btn";
+  shareBtn.textContent = "🟣 Share on Nostr";
+  shareBtn.onclick = () => shareScoreToNostr(shareBtn);
+  answerDiv.appendChild(shareBtn);
+
   showModal("game-over-modal");
+}
+
+function buildShareText() {
+  return (
+    `I scored ${getTotalScore()} in Conway's Game of Pacman — ` +
+    `survived ${generation} generations and grabbed ${score} fake bitcoin ` +
+    `before the walls got me. Can you outlive the Game of Life? 👾\n\n` +
+    GAME_URL
+  );
+}
+
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+}
+
+// Send a signed event to each relay; resolves with how many accepted it
+function publishToRelays(signedEvent) {
+  const publishes = NOSTR_RELAYS.map(
+    (url) =>
+      new Promise((resolve) => {
+        let ws;
+        let settled = false;
+        const done = (ok) => {
+          if (settled) return;
+          settled = true;
+          try {
+            ws.close();
+          } catch (e) {
+            /* already closed */
+          }
+          resolve(ok);
+        };
+
+        try {
+          ws = new WebSocket(url);
+        } catch (e) {
+          resolve(false);
+          return;
+        }
+
+        ws.onopen = () => ws.send(JSON.stringify(["EVENT", signedEvent]));
+        ws.onmessage = (msg) => {
+          try {
+            const data = JSON.parse(msg.data);
+            if (data[0] === "OK" && data[1] === signedEvent.id) {
+              done(data[2] === true);
+            }
+          } catch (e) {
+            /* ignore malformed relay messages */
+          }
+        };
+        ws.onerror = () => done(false);
+        setTimeout(() => done(false), 5000);
+      }),
+  );
+
+  return Promise.all(publishes).then(
+    (results) => results.filter(Boolean).length,
+  );
+}
+
+async function shareScoreToNostr(btn) {
+  const text = buildShareText();
+  btn.disabled = true;
+
+  try {
+    if (window.nostr) {
+      btn.textContent = "Signing…";
+      const signed = await window.nostr.signEvent({
+        kind: 1,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [
+          ["t", "conpac"],
+          ["t", "gaming"],
+          ["r", GAME_URL],
+        ],
+        content: text,
+      });
+
+      btn.textContent = "Publishing…";
+      const accepted = await publishToRelays(signed);
+      if (accepted === 0) throw new Error("No relay accepted the note");
+
+      sfx.payment();
+      btn.textContent = "Shared 🟣";
+      showMessage(
+        `Score shared to Nostr (${accepted} relay${accepted === 1 ? "" : "s"}) 🟣`,
+      );
+      return; // stays disabled — no accidental double posts
+    }
+
+    // No NIP-07 extension — hand them the brag text instead
+    await copyTextToClipboard(text);
+    btn.disabled = false;
+    btn.textContent = "Copied 📋";
+    showMessage("No Nostr extension found — score copied. Paste it anywhere!");
+  } catch (err) {
+    console.warn("Nostr share failed:", err);
+    showError("Share failed or was cancelled.");
+    btn.disabled = false;
+    btn.textContent = "🟣 Share on Nostr";
+  }
 }
 
 async function attemptContinue(btn) {
@@ -1895,13 +2022,7 @@ document.getElementById("npub-submit").onclick = async () => {
 };
 
 async function loadNostrProfile(pubkey, npub = null) {
-  const relays = [
-    "wss://relay.damus.io",
-    "wss://relay.snort.social",
-    "wss://nostr.wine",
-  ];
-
-  const profile = await fetchProfileFromRelays(pubkey, relays);
+  const profile = await fetchProfileFromRelays(pubkey, NOSTR_RELAYS);
 
   // Use getNostrUsername to compute username
   const username = getNostrUsername(profile, pubkey, npub);
