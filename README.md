@@ -40,8 +40,6 @@ The arena is a torus: run off any edge and you reappear on the opposite side. Th
 
 Died? You can **continue right where you fell** — your score and board survive, the nearby walls clear, and the ghosts scatter. The first continue costs 21 sats and the price doubles each time (21, 42, 84, …), so leaderboard spots can't simply be bought.
 
-Faint purple squares telegraph where walls will grow next generation — plan your route accordingly.
-
 ---
 
 ## Game Rules

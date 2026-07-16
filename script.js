@@ -75,9 +75,6 @@ const NUM_COLLECTIBLES = 500;
 let username = localStorage.getItem("conpacUsername") || "";
 
 let grid = [];
-// One generation ahead of `grid` — drawn as faint squares so players can
-// see where walls are about to grow
-let nextGridPreview = null;
 let running = false;
 let generation = 0;
 let lifeInterval = null;
@@ -314,7 +311,6 @@ function initGrid() {
   }
   placeCollectibles();
   initGhosts();
-  nextGridPreview = evolveGrid();
   drawGrid();
 }
 
@@ -656,23 +652,6 @@ function drawPacman() {
 function drawGrid() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Telegraph: faint squares mark cells that will be alive next generation
-  if (nextGridPreview) {
-    ctx.fillStyle = "rgba(123, 104, 238, 0.28)";
-    for (let y = 0; y < GRID_SIZE; y++) {
-      for (let x = 0; x < GRID_SIZE; x++) {
-        if (nextGridPreview[y][x] && !grid[y][x]) {
-          ctx.fillRect(
-            x * CELL_SIZE + 2,
-            y * CELL_SIZE + 2,
-            CELL_SIZE - 4,
-            CELL_SIZE - 4,
-          );
-        }
-      }
-    }
-  }
-
   for (let y = 0; y < GRID_SIZE; y++) {
     for (let x = 0; x < GRID_SIZE; x++) {
       if (grid[y][x]) {
@@ -839,9 +818,6 @@ function stepLife() {
   if (Math.random() < 0.015 * spawnRamp) placeGlider();
   if (Math.random() < 0.008 * spawnRamp) placeLWSS();
   if (Math.random() < 0.005 * spawnRamp) placeMWSS();
-
-  // Telegraph next generation's walls (after spawns so it stays accurate)
-  nextGridPreview = evolveGrid();
 
   drawGrid();
 
@@ -1484,7 +1460,6 @@ function revivePlayer() {
   closeModal("payment-qr-modal");
   closeModal("game-over-modal");
   sfx.revive();
-  nextGridPreview = evolveGrid();
   drawGrid();
   updateScoreDisplay();
   showMessage("⚡ Second life! Move to resume.", 3000);
@@ -2105,7 +2080,6 @@ canvas.addEventListener("click", (e) => {
   if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return;
 
   grid[y][x] = grid[y][x] ? 0 : 1;
-  nextGridPreview = evolveGrid();
   drawGrid();
 });
 
