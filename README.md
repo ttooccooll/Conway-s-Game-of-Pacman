@@ -193,7 +193,7 @@ See the live site for the production backend implementation.
 |-------|-------|
 | Arrow Keys | Move Pacman (auto-starts game) |
 | Touch D-Pad | Mobile movement |
-| Click Canvas | Toggle cells when paused |
+| Click Canvas | Toggle cells (sandbox mode, between games only) |
 | Start Button | Begin new game |
 | Pause Button | Pause/resume |
 | Reset Button | Reset grid |

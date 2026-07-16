@@ -203,8 +203,30 @@
         </div>
         <p>QR zaps are not recorded on the leaderboard.</p>
         <p>Currently, only zaps via WebLN do this.</p>
-        <p>This account will still recieve the sats though.</p>        
+        <p>This account will still recieve the sats though.</p>
         <button onclick="closeModal('lnurl-modal')">Close</button>
+      </div>
+    </div>
+
+    <div id="zap-modal" class="modal">
+      <div class="modal-content">
+        <h3>⚡ Zap how many sats? ⚡</h3>
+        <div class="zap-presets">
+          <button class="zap-preset" data-sats="21">21</button>
+          <button class="zap-preset" data-sats="210">210</button>
+          <button class="zap-preset" data-sats="2100">2100</button>
+        </div>
+        <input
+          id="zap-custom-input"
+          type="number"
+          min="1"
+          placeholder="custom amount"
+          inputmode="numeric"
+        />
+        <div>
+          <button id="zap-custom-send">Send</button>
+          <button id="zap-cancel">Cancel</button>
+        </div>
       </div>
     </div>
 

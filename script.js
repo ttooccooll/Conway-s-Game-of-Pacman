@@ -781,6 +781,12 @@ function stepLife() {
     }
   }
 
+  // Restock whether dots were eaten or swallowed by walls — a strict
+  // equality check here once let the supply run dry permanently
+  if (collectibles.filter((c) => !c.collected).length <= 10) {
+    placeCollectibles(200);
+  }
+
   if (playerAlive && grid[playerY][playerX]) {
     playerAlive = false;
     endGame("The walls grew onto you! Watch your surroundings more next time.");
@@ -806,6 +812,9 @@ let activeTimeouts = [];
 let canPlayGame = false;
 // True once this run has been counted in stats — continues don't recount it
 let statsRecorded = false;
+// Set when a run was unlocked by the daily free game; the free game is only
+// marked used once the run actually starts (so a refresh doesn't consume it)
+let freeGameToMark = false;
 
 function getTotalScore() {
   return score + generation;
@@ -920,11 +929,13 @@ async function startNewGame() {
   activeTimeouts.forEach(clearTimeout);
   activeTimeouts = [];
 
-  let paymentRequired = !canPlayFreeGameToday();
+  // A refresh mid-game keeps this session's unlocked credit — no double charge.
+  // The credit is cleared at game over, so "Play again?" still goes through
+  // the normal free-game/payment gate.
+  const hasSessionCredit = sessionStorage.getItem("conpacCanPlay") === "true";
+  const paymentRequired = !hasSessionCredit && !canPlayFreeGameToday();
 
-  if (!paymentRequired) {
-    markFreeGamePlayed();
-  }
+  freeGameToMark = !hasSessionCredit && !paymentRequired;
 
   if (paymentRequired) {
     showMessage("Payment required to continue playing...");
@@ -1509,23 +1520,25 @@ function movePlayer(dx, dy, dir) {
   if (grid[playerY][playerX]) {
     playerAlive = false;
     endGame("You were eaten by the walls! Watch out next time.");
+    drawGrid();
+    return;
   }
 
-  let replenishing = false;
+  // Walking into a ghost is just as fatal as a ghost walking into you
+  for (const g of ghosts) {
+    if (g.x === playerX && g.y === playerY) {
+      playerAlive = false;
+      endGame("Caught by a ghost! 👻");
+      drawGrid();
+      return;
+    }
+  }
 
   for (const c of collectibles) {
     if (!c.collected && c.x === playerX && c.y === playerY) {
       c.collected = true;
       score += 5;
       sfx.chomp();
-
-      const remaining = collectibles.filter((c) => !c.collected).length;
-
-      if (remaining === 10 && !replenishing) {
-        replenishing = true;
-        placeCollectibles(200);
-        replenishing = false;
-      }
       break;
     }
   }
@@ -1780,6 +1793,36 @@ function closeLnurlModal() {
   closeModal("lnurl-modal");
 }
 
+// Resolves with the chosen amount in sats, or null if cancelled. Opening a
+// new ask cancels any pending one so a zap flow can never hang.
+let zapAmountResolve = null;
+
+function askZapAmount() {
+  return new Promise((resolve) => {
+    if (zapAmountResolve) zapAmountResolve(null);
+    zapAmountResolve = resolve;
+
+    const input = document.getElementById("zap-custom-input");
+    input.value = "";
+    showModal("zap-modal");
+
+    const settle = (value) => {
+      zapAmountResolve = null;
+      closeModal("zap-modal");
+      resolve(value);
+    };
+
+    document.querySelectorAll("#zap-modal .zap-preset").forEach((b) => {
+      b.onclick = () => settle(parseInt(b.dataset.sats, 10));
+    });
+    document.getElementById("zap-custom-send").onclick = () => {
+      const v = parseInt(input.value, 10);
+      settle(v > 0 ? v : null);
+    };
+    document.getElementById("zap-cancel").onclick = () => settle(null);
+  });
+}
+
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest(".zap-btn");
   if (!btn) return;
@@ -1796,17 +1839,17 @@ document.addEventListener("click", async (e) => {
     return;
   }
 
-  const amount = parseInt(prompt("Enter zap amount in sats:", "21"), 10);
+  btn.disabled = true;
+  const amount = await askZapAmount();
 
   if (!amount || amount <= 0) {
-    showError("Zap cancelled or invalid amount ⚡");
+    btn.disabled = false;
+    showMessage("Zap cancelled ⚡");
     return;
   }
 
   const hardcodedMemo =
     "Zapped to your profile on the leaderboard of Conways Game of Pacman!";
-
-  btn.disabled = true;
 
   try {
     // Try WebLN first
@@ -1943,11 +1986,16 @@ document.getElementById("tip-btn").addEventListener("click", async () => {
 });
 
 canvas.addEventListener("click", (e) => {
-  if (running) return;
+  // Sandbox editing only when no scored run is active — pausing a paid game
+  // to erase the walls around you was a free win
+  if (running || canPlayGame) return;
 
+  // Scale through the bounding rect so clicks land right even when CSS
+  // transforms shrink the canvas (mobile)
   const rect = canvas.getBoundingClientRect();
-  const x = Math.floor((e.clientX - rect.left) / CELL_SIZE);
-  const y = Math.floor((e.clientY - rect.top) / CELL_SIZE);
+  const x = Math.floor(((e.clientX - rect.left) / rect.width) * GRID_SIZE);
+  const y = Math.floor(((e.clientY - rect.top) / rect.height) * GRID_SIZE);
+  if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return;
 
   grid[y][x] = grid[y][x] ? 0 : 1;
   drawGrid();
@@ -1986,6 +2034,10 @@ function countNeighbors(x, y) {
 function startLife() {
   if (!canPlayGame || running) return;
 
+  if (freeGameToMark) {
+    markFreeGamePlayed();
+    freeGameToMark = false;
+  }
   if (generation === 0) sfx.start();
   running = true;
   lifeInterval = setInterval(stepLife, lifeSpeed);

@@ -415,6 +415,27 @@ main {
   margin-top: 8px;
 }
 
+/* ---------------- Zap Amount Modal ---------------- */
+.zap-presets {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.zap-presets button {
+  flex: 1;
+  max-width: 100px;
+  padding: 12px 8px;
+}
+#zap-custom-input {
+  width: 70%;
+  text-align: center;
+}
+#zap-cancel {
+  background: #1a1a2e;
+  color: #c88fff;
+  border: 1px solid #3a3a6c;
+}
+
 /* ---------------- Share on Nostr ---------------- */
 /* The two stacked CTAs share one footprint so the card reads as a column */
 #continue-btn,
