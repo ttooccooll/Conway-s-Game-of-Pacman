@@ -159,7 +159,7 @@ input {
   transform: scale(0.95);
 }
 
-#zap-btn {
+.zap-btn {
   padding: 1px 5px 2px 3px;
   margin: 5px 0 7px 0;
   font-size: small

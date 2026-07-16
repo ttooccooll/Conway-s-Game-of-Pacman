@@ -35,6 +35,39 @@ const NOSTR_RELAYS = [
 ];
 
 const GAME_URL = "https://conwaysgameofpacman.xyz";
+const BACKEND_URL = "https://conpac-backend.jasonbohio.workers.dev";
+
+async function sha256Hex(str) {
+  const buf = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(str),
+  );
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+// NIP-98 HTTP-auth event binding this exact score payload to the player's
+// key. The backend can verify sig + payload hash + freshness; until it
+// does, the extra field is simply ignored.
+async function buildScoreAuth(payload) {
+  if (!window.nostr) return null;
+  try {
+    return await window.nostr.signEvent({
+      kind: 27235,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [
+        ["u", `${BACKEND_URL}/api/submit-score`],
+        ["method", "POST"],
+        ["payload", await sha256Hex(JSON.stringify(payload))],
+      ],
+      content: "",
+    });
+  } catch (err) {
+    console.warn("Score signing declined or failed:", err);
+    return null;
+  }
+}
 
 let collectibles = [];
 const NUM_COLLECTIBLES = 500;
@@ -42,6 +75,9 @@ const NUM_COLLECTIBLES = 500;
 let username = localStorage.getItem("conpacUsername") || "";
 
 let grid = [];
+// One generation ahead of `grid` — drawn as faint squares so players can
+// see where walls are about to grow
+let nextGridPreview = null;
 let running = false;
 let generation = 0;
 let lifeInterval = null;
@@ -278,6 +314,7 @@ function initGrid() {
   }
   placeCollectibles();
   initGhosts();
+  nextGridPreview = evolveGrid();
   drawGrid();
 }
 
@@ -619,6 +656,23 @@ function drawPacman() {
 function drawGrid() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // Telegraph: faint squares mark cells that will be alive next generation
+  if (nextGridPreview) {
+    ctx.fillStyle = "rgba(123, 104, 238, 0.28)";
+    for (let y = 0; y < GRID_SIZE; y++) {
+      for (let x = 0; x < GRID_SIZE; x++) {
+        if (nextGridPreview[y][x] && !grid[y][x]) {
+          ctx.fillRect(
+            x * CELL_SIZE + 2,
+            y * CELL_SIZE + 2,
+            CELL_SIZE - 4,
+            CELL_SIZE - 4,
+          );
+        }
+      }
+    }
+  }
+
   for (let y = 0; y < GRID_SIZE; y++) {
     for (let x = 0; x < GRID_SIZE; x++) {
       if (grid[y][x]) {
@@ -746,7 +800,6 @@ function stepLife() {
   mouthOpen = !mouthOpen;
   moveGhosts();
   updateScoreDisplay();
-  const next = grid.map((row) => [...row]);
 
   // Speed ramps smoothly with score instead of one big jump
   const targetSpeed = currentLifeSpeed();
@@ -760,18 +813,7 @@ function stepLife() {
     sfx.speedup();
   }
 
-  for (let y = 0; y < GRID_SIZE; y++) {
-    for (let x = 0; x < GRID_SIZE; x++) {
-      const n = countNeighbors(x, y);
-      if (grid[y][x]) {
-        next[y][x] = n === 2 || n === 3 ? 1 : 0;
-      } else {
-        next[y][x] = n === 3 ? 1 : 0;
-      }
-    }
-  }
-
-  grid = next;
+  grid = evolveGrid();
   generation++;
 
   // Remove collectibles that get covered by live cells
@@ -798,6 +840,9 @@ function stepLife() {
   if (Math.random() < 0.008 * spawnRamp) placeLWSS();
   if (Math.random() < 0.005 * spawnRamp) placeMWSS();
 
+  // Telegraph next generation's walls (after spawns so it stays accurate)
+  nextGridPreview = evolveGrid();
+
   drawGrid();
 
   if (grid.flat().every((c) => c === 0)) {
@@ -815,6 +860,13 @@ let statsRecorded = false;
 // Set when a run was unlocked by the daily free game; the free game is only
 // marked used once the run actually starts (so a refresh doesn't consume it)
 let freeGameToMark = false;
+// Continues get pricier within a run (21, 42, 84, …) so top leaderboard
+// spots can't simply be bought
+let continuesUsed = 0;
+
+function continuePrice() {
+  return 21 * 2 ** continuesUsed;
+}
 
 function getTotalScore() {
   return score + generation;
@@ -925,6 +977,7 @@ async function startNewGame() {
   clearInterval(lifeInterval);
   canPlayGame = false;
   statsRecorded = false;
+  continuesUsed = 0;
   lifeSpeed = BASE_LIFE_SPEED;
   activeTimeouts.forEach(clearTimeout);
   activeTimeouts = [];
@@ -1202,7 +1255,7 @@ function showGameOver(reason = "", { recoverable = true } = {}) {
   if (recoverable) {
     const continueBtn = document.createElement("button");
     continueBtn.id = "continue-btn";
-    continueBtn.textContent = "⚡ Continue for 21 sats";
+    continueBtn.textContent = `⚡ Continue for ${continuePrice()} sats`;
     continueBtn.onclick = () => attemptContinue(continueBtn);
     answerDiv.appendChild(continueBtn);
 
@@ -1322,7 +1375,26 @@ async function shareScoreToNostr(btn) {
       return; // stays disabled — no accidental double posts
     }
 
-    // No NIP-07 extension — hand them the brag text instead
+    // No NIP-07 extension — the native share sheet reaches any app (this is
+    // most phones), with clipboard as the last resort
+    if (navigator.share) {
+      try {
+        await navigator.share({ text });
+        btn.textContent = "Shared ✓";
+        btn.classList.add("is-shared");
+        showMessage("Thanks for spreading the game! 🕹️");
+        return;
+      } catch (err) {
+        if (err.name === "AbortError") {
+          // user closed the sheet — not an error, let them retry
+          btn.disabled = false;
+          btn.textContent = "🟣 Share on Nostr";
+          return;
+        }
+        console.warn("navigator.share failed, copying instead:", err);
+      }
+    }
+
     await copyTextToClipboard(text);
     btn.disabled = false;
     btn.textContent = "Copied 📋";
@@ -1336,6 +1408,7 @@ async function shareScoreToNostr(btn) {
 }
 
 async function attemptContinue(btn) {
+  const price = continuePrice();
   btn.disabled = true;
   btn.textContent = "Creating invoice…";
 
@@ -1344,7 +1417,7 @@ async function attemptContinue(btn) {
 
     if (typeof WebLN !== "undefined") {
       try {
-        const invoice = await generateInvoice(21);
+        const invoice = await generateInvoice(price);
         await payInvoice(invoice);
         paid = true;
       } catch (weblnErr) {
@@ -1353,7 +1426,7 @@ async function attemptContinue(btn) {
     }
 
     if (!paid) {
-      paid = await payWithQR(21);
+      paid = await payWithQR(price);
       // payWithQR's close button hides the game-over modal — bring it back
       if (!paid) showModal("game-over-modal");
     }
@@ -1368,7 +1441,7 @@ async function attemptContinue(btn) {
   }
 
   btn.disabled = false;
-  btn.textContent = "⚡ Continue for 21 sats";
+  btn.textContent = `⚡ Continue for ${price} sats`;
 }
 
 function relocateGhost(g) {
@@ -1404,12 +1477,14 @@ function revivePlayer() {
   playerAlive = true;
   gameOver = false;
   canPlayGame = true;
+  continuesUsed++;
   sessionStorage.setItem("conpacCanPlay", "true");
   playerTrail = [];
 
   closeModal("payment-qr-modal");
   closeModal("game-over-modal");
   sfx.revive();
+  nextGridPreview = evolveGrid();
   drawGrid();
   updateScoreDisplay();
   showMessage("⚡ Second life! Move to resume.", 3000);
@@ -1479,22 +1554,31 @@ async function endGame(reason = "", { recoverable = true } = {}) {
   await updateStats(countGame);
   showGameOver(`${reason} Score: ${getTotalScore()}`, { recoverable });
   const nostr = JSON.parse(localStorage.getItem("conpacNostr") || "null");
+  const payload = {
+    pubkey: nostr?.pubkey,
+    username: localStorage.getItem("conpacUsername"),
+    high_score: getTotalScore(),
+    picture: nostr?.picture || null,
+    lud16: nostr?.lud16 || null,
+    lud06: nostr?.lud06 || null,
+  };
+
+  // Extension logins sign their submission; a hung extension prompt
+  // shouldn't hold the score hostage, so give it 15s then send unsigned
+  const auth =
+    nostr?.via === "extension" && window.nostr
+      ? await Promise.race([
+          buildScoreAuth(payload),
+          new Promise((resolve) => setTimeout(() => resolve(null), 15000)),
+        ])
+      : null;
+
   try {
-    const res = await fetch(
-      "https://conpac-backend.jasonbohio.workers.dev/api/submit-score",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pubkey: nostr?.pubkey,
-          username: localStorage.getItem("conpacUsername"),
-          high_score: getTotalScore(),
-          picture: nostr?.picture || null,
-          lud16: nostr?.lud16 || null,
-          lud06: nostr?.lud06 || null,
-        }),
-      },
-    );
+    const res = await fetch(`${BACKEND_URL}/api/submit-score`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(auth ? { ...payload, auth } : payload),
+    });
 
     if (!res.ok) {
       console.error("Failed to submit score:", res.status, await res.text());
@@ -1546,6 +1630,19 @@ function movePlayer(dx, dy, dir) {
   drawGrid();
 }
 
+// Profile pictures come from untrusted Nostr metadata — allow http(s) only
+function safeHttpUrl(url, fallback) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+      return url;
+    }
+  } catch (e) {
+    /* not a URL at all */
+  }
+  return fallback;
+}
+
 async function renderLeaderboard() {
   const el = document.getElementById("leaderboard");
   const nostr = JSON.parse(localStorage.getItem("conpacNostr") || "null");
@@ -1579,6 +1676,8 @@ async function renderLeaderboard() {
       </div>
     `;
 
+    // Usernames, pictures, and lightning addresses come from arbitrary Nostr
+    // profiles — build with DOM APIs so nothing is ever parsed as HTML
     data.forEach((u, i) => {
       const row = document.createElement("div");
       row.className = "leaderboard-row";
@@ -1588,46 +1687,54 @@ async function renderLeaderboard() {
       }
 
       const fallbackAvatar = `https://api.dicebear.com/7.x/identicon/svg?seed=Satoshi%20Nakamoto`;
-      let avatarUrl = u.picture || fallbackAvatar;
+      let avatarUrl = safeHttpUrl(u.picture, fallbackAvatar);
 
       if (nostr && u.username === currentUser && nostr.picture) {
-        avatarUrl = nostr.picture;
+        avatarUrl = safeHttpUrl(nostr.picture, fallbackAvatar);
       }
 
       const zapCount = u.zap_count ?? 0;
       const satsReceived = u.sats_received ?? 0;
       const zapLabel = zapCount === 1 ? "zap" : "zaps";
 
-      row.innerHTML = `
-    <div class="leaderboard-rank">${i + 1}</div>
+      const rank = document.createElement("div");
+      rank.className = "leaderboard-rank";
+      rank.textContent = i + 1;
 
-    <div class="leaderboard-player">
-      <img
-        class="leaderboard-avatar"
-        src="${avatarUrl}"
-        alt="${u.username}"
-        loading="lazy"
-        onerror="this.src='https://api.dicebear.com/7.x/identicon/svg?seed=Satoshi%20Nakamoto'"
-      />
-      <span class="leaderboard-name">${u.username}</span>
-    </div>
+      const player = document.createElement("div");
+      player.className = "leaderboard-player";
 
-    <div class="leaderboard-stats">
-      High Score - ${u.high_score}
-      </br>
-      <button
-        class="zap-btn"
-        id="zap-btn"
-        data-pubkey="${u.pubkey}"
-        data-lud16="${u.lud16 || ""}"
-        data-lud06="${u.lud06 || ""}"
-      >
-        ⚡ Zap
-      </button>
-      ${zapCount} ${zapLabel} ${satsReceived} sats
-    </div>
-  `;
+      const img = document.createElement("img");
+      img.className = "leaderboard-avatar";
+      img.src = avatarUrl;
+      img.alt = u.username || "player";
+      img.loading = "lazy";
+      img.onerror = () => {
+        img.onerror = null;
+        img.src = fallbackAvatar;
+      };
 
+      const name = document.createElement("span");
+      name.className = "leaderboard-name";
+      name.textContent = u.username || "anon";
+
+      player.append(img, name);
+
+      const stats = document.createElement("div");
+      stats.className = "leaderboard-stats";
+      stats.append(`High Score - ${u.high_score}`);
+      stats.appendChild(document.createElement("br"));
+
+      const zapBtn = document.createElement("button");
+      zapBtn.className = "zap-btn";
+      zapBtn.dataset.pubkey = u.pubkey || "";
+      zapBtn.dataset.lud16 = u.lud16 || "";
+      zapBtn.dataset.lud06 = u.lud06 || "";
+      zapBtn.textContent = "⚡ Zap";
+      stats.appendChild(zapBtn);
+      stats.append(` ${zapCount} ${zapLabel} ${satsReceived} sats`);
+
+      row.append(rank, player, stats);
       el.appendChild(row);
     });
   } catch (err) {
@@ -1998,6 +2105,7 @@ canvas.addEventListener("click", (e) => {
   if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return;
 
   grid[y][x] = grid[y][x] ? 0 : 1;
+  nextGridPreview = evolveGrid();
   drawGrid();
 });
 
@@ -2031,6 +2139,22 @@ function countNeighbors(x, y) {
   return count;
 }
 
+// One Game of Life step applied to the current grid, returned as a new array
+function evolveGrid() {
+  const out = grid.map((row) => [...row]);
+  for (let y = 0; y < GRID_SIZE; y++) {
+    for (let x = 0; x < GRID_SIZE; x++) {
+      const n = countNeighbors(x, y);
+      if (grid[y][x]) {
+        out[y][x] = n === 2 || n === 3 ? 1 : 0;
+      } else {
+        out[y][x] = n === 3 ? 1 : 0;
+      }
+    }
+  }
+  return out;
+}
+
 function startLife() {
   if (!canPlayGame || running) return;
 
@@ -2059,7 +2183,7 @@ async function loginWithNostr() {
   }
 
   const pubkey = await window.nostr.getPublicKey();
-  await loadNostrProfile(pubkey);
+  await loadNostrProfile(pubkey, null, "extension");
 }
 
 document.getElementById("nostr-login-btn").onclick = loginWithNostr;
@@ -2074,7 +2198,7 @@ document.getElementById("npub-submit").onclick = async () => {
   await loadNostrProfile(pubkey, npub);
 };
 
-async function loadNostrProfile(pubkey, npub = null) {
+async function loadNostrProfile(pubkey, npub = null, via = "npub") {
   const profile = await fetchProfileFromRelays(pubkey, NOSTR_RELAYS);
 
   // Use getNostrUsername to compute username
@@ -2084,6 +2208,7 @@ async function loadNostrProfile(pubkey, npub = null) {
     pubkey,
     npub,
     username,
+    via, // "extension" logins can sign score submissions
     picture: profile.picture || null,
     lud16: profile.lud16 || null,
     lud06: profile.lud06 || null,

@@ -38,7 +38,9 @@ Score as high as possible before getting caught by:
 
 The arena is a torus: run off any edge and you reappear on the opposite side. The ghosts, the walls, and the gliders all wrap around too.
 
-Died? You can **continue right where you fell for 21 sats** — your score and board survive, the nearby walls clear, and the ghosts scatter.
+Died? You can **continue right where you fell** — your score and board survive, the nearby walls clear, and the ghosts scatter. The first continue costs 21 sats and the price doubles each time (21, 42, 84, …), so leaderboard spots can't simply be bought.
+
+Faint purple squares telegraph where walls will grow next generation — plan your route accordingly.
 
 ---
 
@@ -96,8 +98,12 @@ The game occasionally spawns gliders and spaceships from the corners to keep thi
 - Profile fetched from Nostr relays (damus.io, snort.social, nostr.wine)
 - Username, avatar, and Lightning address support
 - **Share your score to Nostr** from the game-over screen — signs a note
-  with your NIP-07 extension and publishes to the relays (falls back to
-  copying the text if no extension is installed)
+  with your NIP-07 extension and publishes to the relays; without an
+  extension it opens the native share sheet (mobile) or copies the text
+- Score submissions include a **NIP-98 auth event** when logged in with a
+  Nostr extension, so the backend can verify who really posted a score
+- Leaderboard entries are rendered as plain text — profile names and
+  pictures from Nostr can't inject markup
 
 ### Lightning Integration
 - **WebLN**: Browser extension payment support
