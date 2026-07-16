@@ -10,10 +10,24 @@
       crossorigin="anonymous"
       defer
     ></script>
-    <script src="https://unpkg.com/bech32-buffer@1.0.1/dist/bech32.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js" defer></script>
-    <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js" defer></script>
-    <script src="https://cdn.skypack.dev/@scure/base@1.1.1" defer></script>
+    <!-- NOTE: the old bech32-buffer tag pointed at a version that never
+         existed and 404'd since day one, so window.bech32 never loaded and
+         lud06 (bech32 LNURL) zaps have never worked — lud16 lightning
+         addresses are the path that works. Removed rather than "fixed"
+         to keep behavior identical; a real lud06 fix needs the bech32
+         package bundled properly. -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"
+      integrity="sha384-HGmnkDZJy7mRkoARekrrj0VjEFSh9a0Z8qxGri/kTTAJkgR8hqD1lHsYSh3JdzRi"
+      crossorigin="anonymous"
+      defer
+    ></script>
+    <script
+      src="https://unpkg.com/nostr-tools@2.23.12/lib/nostr.bundle.js"
+      integrity="sha384-8nAmri+iOZ+hudQBEltzBV11u3Ps+eS/KXZD1y0IO4sDwIC43pLTPn6qOslOQ4WN"
+      crossorigin="anonymous"
+      defer
+    ></script>
     <script src="script.js" defer></script>
     <link rel="stylesheet" id="stylesheet" href="style.css" />
     <meta
@@ -190,6 +204,7 @@
           <button id="npub-submit">Submit</button>
           <button class="close-btn" onclick="closeModal('username-modal')">✕</button>
         </div>
+        <button id="nostr-logout-btn" style="display: none">Sign out</button>
       </div>
     </div>
 

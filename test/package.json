@@ -1,0 +1,10 @@
+{
+  "name": "conpac-tests",
+  "private": true,
+  "type": "module",
+  "description": "Headless-browser verification suite for Conway's Game of Pacman",
+  "dependencies": {
+    "puppeteer-core": "^23.11.1",
+    "serve-handler": "^6.1.6"
+  }
+}

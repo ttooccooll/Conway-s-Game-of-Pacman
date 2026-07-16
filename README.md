@@ -129,6 +129,7 @@ The game occasionally spawns gliders and spaceships from the corners to keep thi
 - **Styling**: Custom CSS with arcade-style buttons
 - **Fonts**: Atari Classic, Super (TTF)
 - **Payments**: Bitcoin Lightning Network
+  - NWC (Nostr Wallet Connect) via AlbyHub for invoices
   - WebLN
   - LNURL/LNURLw
   - bech32 encoding
@@ -157,17 +158,33 @@ npx serve .
 
 ### Backend Requirements
 
-Lightning payment features require a backend server. The frontend expects:
-- `POST /api/create-invoice` - Creates Lightning invoice
-- `GET /api/check-invoice?paymentHash=` - Verifies payment
+Lightning invoices are handled by the Vercel serverless functions in
+`api/`, which talk to an [AlbyHub](https://albyhub.com/) wallet over
+**NWC (Nostr Wallet Connect)** using `@getalby/sdk`:
 
-Example backend (Cloudflare Workers):
-```javascript
-// api/create-invoice.js
-// api/check-invoice.js
-```
+- `POST /api/create-invoice` — creates a Lightning invoice
+- `GET /api/check-invoice?paymentHash=` — checks payment status
 
-See the live site for the production backend implementation.
+Configuration is a single environment variable:
+
+- `NWC_URL` — a `nostr+walletconnect://…` connection string from AlbyHub.
+  Grant it **receive-only permissions** (create + look up invoices) so it
+  can't spend funds. Requires Node 22 (pinned via `engines`).
+
+To run payments locally use `vercel dev` with `NWC_URL` set; `npx serve .`
+is enough for the game itself.
+
+Leaderboard, stats, zap recording, and LNURL proxying live in a separate
+Cloudflare Worker (`conpac-backend.jasonbohio.workers.dev`), not in this
+repository.
+
+### Tests
+
+`npm test` installs the test dependencies and runs a headless-Chrome
+suite (`test/verify.mjs`) covering gameplay, payments UI, sharing,
+leaderboard rendering, and the security headers. It needs a local
+Chrome/Chromium (set `CHROME_PATH` if it isn't auto-detected). The same
+suite runs in GitHub Actions on every push.
 
 ---
 

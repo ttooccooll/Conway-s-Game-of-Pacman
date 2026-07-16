@@ -9,6 +9,7 @@
     "@getalby/sdk": "^8.0.3"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "npx serve .",
+    "test": "npm install --prefix test --no-audit --no-fund && node test/verify.mjs"
   }
 }

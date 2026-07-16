@@ -1,0 +1,22 @@
+name: browser-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install test dependencies
+        run: npm install --prefix test --no-audit --no-fund
+
+      - name: Run browser suite
+        run: node test/verify.mjs

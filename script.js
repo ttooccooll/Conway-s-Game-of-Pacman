@@ -863,22 +863,6 @@ canPlayGame = sessionStorage.getItem("conpacCanPlay") === "true";
 
 const messageContainer = document.getElementById("message-container");
 
-function handleFirstKeypress(e) {
-  const activeEl = document.activeElement;
-  const openModal = document.querySelector(".modal.show");
-
-  if (
-    (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA") &&
-    openModal
-  ) {
-    return;
-  }
-
-  if (/^[a-zA-Z]$/.test(e.key) || e.key === "Enter" || e.key === "Backspace") {
-    document.removeEventListener("keydown", handleFirstKeypress);
-  }
-}
-
 async function enableWebLN() {
   if (typeof WebLN === "undefined") {
     console.info("WebLN not available; QR payment will be used.");
@@ -968,7 +952,6 @@ async function startNewGame() {
 
   if (paymentRequired) {
     showMessage("Payment required to continue playing...");
-    inputLocked = true;
 
     const paid = await handlePayment();
     if (!paid) {
@@ -1205,8 +1188,6 @@ async function handlePayment() {
     return false;
   }
 }
-
-let inputLocked = false;
 
 function showModal(modalId) {
   document.getElementById(modalId).classList.add("show");
@@ -1466,35 +1447,13 @@ function revivePlayer() {
 }
 
 async function loadStats() {
-  let stats = { played: 0, best_score: 0, last_score: 0 };
-  const localStats = JSON.parse(localStorage.getItem("conpacStats") || "{}");
+  // Stats live in localStorage; nothing ever set the old conpacUserId key,
+  // so the backend-sync branch that read it was dead code
+  const stats = JSON.parse(localStorage.getItem("conpacStats") || "{}");
 
-  const userId = localStorage.getItem("conpacUserId");
-  if (userId) {
-    try {
-      const resp = await fetch(
-        `https://conpac-backend.jasonbohio.workers.dev/api/user/${userId}`,
-      );
-      if (resp.ok) {
-        const backendStats = await resp.json();
-        stats.played = backendStats.played ?? localStats.played ?? 0;
-        stats.best_score =
-          backendStats.best_score ?? localStats.best_score ?? 0;
-        stats.last_score =
-          backendStats.last_score ?? localStats.last_score ?? 0;
-      } else {
-        stats = localStats;
-      }
-    } catch (err) {
-      stats = localStats;
-    }
-  } else {
-    stats = localStats;
-  }
-
-  document.getElementById("played").textContent = stats.played;
-  document.getElementById("best-score").textContent = stats.best_score;
-  document.getElementById("last-score").textContent = stats.last_score;
+  document.getElementById("played").textContent = stats.played ?? 0;
+  document.getElementById("best-score").textContent = stats.best_score ?? 0;
+  document.getElementById("last-score").textContent = stats.last_score ?? 0;
 }
 
 async function updateStats(countGame = true) {
@@ -1845,11 +1804,6 @@ async function fetchLnurlParams(lnurl) {
   return json;
 }
 
-function encodeLnurl(url) {
-  const words = bech32.toWords(new TextEncoder().encode(url));
-  return bech32.encode("lnurl", words, 1023);
-}
-
 async function showLnurlQR(lightningAddress) {
   const canvas = document.getElementById("lnurl-qr");
 
@@ -1866,13 +1820,6 @@ async function showLnurlQR(lightningAddress) {
     console.error("Failed to render QR code:", err);
     showError("⚡ Could not render QR code");
   }
-}
-
-function closeLnurlModal() {
-  const canvas = document.getElementById("lnurl-qr");
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  closeModal("lnurl-modal");
 }
 
 // Resolves with the chosen amount in sats, or null if cancelled. Opening a
@@ -2240,11 +2187,35 @@ function applyNostrProfile(profile) {
   profileBox.style.display = "flex";
 
   localStorage.setItem("conpacUsername", profile.username);
+  username = profile.username;
+  updateLogoutVisibility();
 
   showMessage(`Welcome, ${profile.username} ⚡`);
 
   closeModal("username-modal");
 }
+
+function updateLogoutVisibility() {
+  const btn = document.getElementById("nostr-logout-btn");
+  if (btn) {
+    btn.style.display = localStorage.getItem("conpacNostr") ? "" : "none";
+  }
+}
+
+function logoutNostr() {
+  localStorage.removeItem("conpacNostr");
+  localStorage.removeItem("conpacUsername");
+  username = "";
+
+  const profileBox = document.getElementById("nostr-profile");
+  if (profileBox) profileBox.style.display = "none";
+
+  updateLogoutVisibility();
+  closeModal("username-modal");
+  showMessage("Signed out 👋");
+}
+
+document.getElementById("nostr-logout-btn").onclick = logoutNostr;
 
 function getNostrUsername(profile, pubkey, npub = null) {
   if (profile.display_name && profile.display_name.trim()) {
@@ -2273,6 +2244,7 @@ document.addEventListener("DOMContentLoaded", () => {
       picture: nostr.picture,
     });
   }
+  updateLogoutVisibility();
 });
 
 window.resetGame = startNewGame;
