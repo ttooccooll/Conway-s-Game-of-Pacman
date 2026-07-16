@@ -415,6 +415,43 @@ main {
   margin-top: 8px;
 }
 
+/* ---------------- Wallet Connect (NWC) ---------------- */
+.nwc-steps {
+  text-align: left;
+  font-size: 13px;
+  margin: 8px 0 8px 20px;
+}
+#nwc-input {
+  width: 90%;
+}
+#nwc-status {
+  font-size: 13px;
+  color: #ffd700;
+  min-height: 1em;
+  margin-top: 8px;
+}
+#wallet-status {
+  font-size: 13px;
+  color: #81ea6cff;
+  text-shadow: 0 0 1em #87fd7aff;
+  margin-top: 10px;
+}
+#qr-connect-link {
+  background: none;
+  border: none;
+  color: #00bfff;
+  text-decoration: underline;
+  font-size: 13px;
+  font-weight: normal;
+  padding: 6px;
+  margin-top: 4px;
+}
+#qr-connect-link:hover {
+  box-shadow: none;
+  transform: none;
+  text-shadow: 0 0 8px #00bfff;
+}
+
 /* ---------------- Zap Amount Modal ---------------- */
 .zap-presets {
   display: flex;

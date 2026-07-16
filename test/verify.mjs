@@ -78,6 +78,9 @@ const server = http.createServer((req, res) => {
 });
 await new Promise((r) => server.listen(8907, r));
 
+const { startMockWallet } = await import("./nwc-mock.mjs");
+const mockWallet = startMockWallet(server, 8907);
+
 const browser = await puppeteer.launch({
   executablePath: findChrome(),
   headless: true,
@@ -537,6 +540,76 @@ check(
   "logout clears identity and hides the button",
   logout.visibleWhenLoggedIn && logout.cleared && logout.hiddenAfter,
   JSON.stringify(logout),
+);
+
+// NWC wallet connect: modal validates input, then connects to the real
+// in-process mock wallet over the relay protocol (full crypto roundtrip)
+const nwcConnect = await page.evaluate(async (connString) => {
+  openNwcModal();
+  const visible = document.getElementById("nwc-modal").classList.contains("show");
+  const input = document.getElementById("nwc-input");
+  input.value = "not-a-wallet-string";
+  await saveNwcConnection();
+  const rejected =
+    !localStorage.getItem("conpacNwcUrl") &&
+    document.getElementById("nwc-status").textContent.length > 0;
+  input.value = connString;
+  await saveNwcConnection();
+  return {
+    visible,
+    rejected,
+    accepted: !!localStorage.getItem("conpacNwcUrl"),
+    modalClosed: !document.getElementById("nwc-modal").classList.contains("show"),
+    inputCleared: input.value === "",
+    statusShown:
+      document.getElementById("wallet-status").textContent.includes("connected"),
+  };
+}, mockWallet.connectionString);
+check(
+  "NWC modal rejects garbage and connects to a real wallet",
+  nwcConnect.visible && nwcConnect.rejected && nwcConnect.accepted && nwcConnect.modalClosed && nwcConnect.inputCleared && nwcConnect.statusShown,
+  JSON.stringify(nwcConnect),
+);
+
+// game unlock pays straight through the connected wallet — no QR modal
+const nwcPay = await page.evaluate(async () => {
+  window.generateInvoice = async () => "lnbc210n1mockinvoice";
+  const paid = await handlePayment();
+  return {
+    paid,
+    qrShown: document
+      .getElementById("payment-qr-modal")
+      .classList.contains("show"),
+  };
+});
+check(
+  "game unlock pays via NWC without showing the QR modal",
+  nwcPay.paid === true && !nwcPay.qrShown,
+  JSON.stringify(nwcPay),
+);
+check(
+  "mock wallet really received the pay_invoice request",
+  mockWallet.paidInvoices.includes("lnbc210n1mockinvoice"),
+  mockWallet.paidInvoices.join(","),
+);
+
+// disconnect restores stock behavior for everything that follows
+const nwcDisconnect = await page.evaluate(() => {
+  openNwcModal();
+  const disconnectVisible =
+    document.getElementById("nwc-disconnect").style.display !== "none";
+  disconnectNwc();
+  return {
+    disconnectVisible,
+    cleared: !localStorage.getItem("conpacNwcUrl"),
+    statusCleared:
+      document.getElementById("wallet-status").textContent === "",
+  };
+});
+check(
+  "NWC disconnect clears the connection and status",
+  nwcDisconnect.disconnectVisible && nwcDisconnect.cleared && nwcDisconnect.statusCleared,
+  JSON.stringify(nwcDisconnect),
 );
 
 // XSS: malicious Nostr usernames/pictures must render inert

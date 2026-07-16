@@ -863,6 +863,169 @@ canPlayGame = sessionStorage.getItem("conpacCanPlay") === "true";
 
 const messageContainer = document.getElementById("message-container");
 
+// ---------------------------------------------------------------------------
+// Optional player wallet via Nostr Wallet Connect (NIP-47). Purely additive:
+// when no connection is saved, every payment flow behaves exactly as before
+// (WebLN extension, then QR). Built on the already-loaded nostr-tools bundle.
+// ---------------------------------------------------------------------------
+const NWC_STORAGE_KEY = "conpacNwcUrl";
+
+function hexToBytes(hex) {
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) {
+    out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  }
+  return out;
+}
+
+function parseNwcUrl(raw) {
+  const scheme = "nostr+walletconnect://";
+  const trimmed = (raw || "").trim();
+  if (!trimmed.toLowerCase().startsWith(scheme)) {
+    throw new Error("must start with nostr+walletconnect://");
+  }
+  const u = new URL("http://" + trimmed.slice(scheme.length));
+  const walletPubkey = u.hostname.toLowerCase();
+  const relay = u.searchParams.get("relay") || "";
+  const secret = (u.searchParams.get("secret") || "").toLowerCase();
+  // ws:// is allowed only for local development wallets
+  const isLocalRelay = /^ws:\/\/(localhost|127\.0\.0\.1)([:/]|$)/.test(relay);
+  if (!/^[0-9a-f]{64}$/.test(walletPubkey)) {
+    throw new Error("invalid wallet pubkey");
+  }
+  if (!/^wss:\/\//.test(relay) && !isLocalRelay) {
+    throw new Error("invalid relay URL");
+  }
+  if (!/^[0-9a-f]{64}$/.test(secret)) {
+    throw new Error("invalid secret");
+  }
+  return { walletPubkey, relay, secret };
+}
+
+function getNwcConnection() {
+  try {
+    const stored = localStorage.getItem(NWC_STORAGE_KEY);
+    return stored ? parseNwcUrl(stored) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function nwcRequest(method, params, timeoutMs = 25000) {
+  return new Promise((resolve, reject) => {
+    const conn = getNwcConnection();
+    if (!conn) {
+      reject(new Error("No wallet connected"));
+      return;
+    }
+    if (typeof NostrTools === "undefined" || !NostrTools.nip04) {
+      reject(new Error("nostr-tools unavailable"));
+      return;
+    }
+
+    const secretBytes = hexToBytes(conn.secret);
+    let ws;
+    let settled = false;
+    const finish = (err, result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      try {
+        ws.close();
+      } catch (e) {
+        /* already closed */
+      }
+      if (err) reject(err);
+      else resolve(result);
+    };
+    const timer = setTimeout(
+      () => finish(new Error("Wallet did not respond in time")),
+      timeoutMs,
+    );
+
+    (async () => {
+      try {
+        const content = await NostrTools.nip04.encrypt(
+          secretBytes,
+          conn.walletPubkey,
+          JSON.stringify({ method, params }),
+        );
+        const event = NostrTools.finalizeEvent(
+          {
+            kind: 23194,
+            created_at: Math.floor(Date.now() / 1000),
+            tags: [["p", conn.walletPubkey]],
+            content,
+          },
+          secretBytes,
+        );
+
+        ws = new WebSocket(conn.relay);
+        ws.onopen = () => {
+          // subscribe to the response before publishing the request
+          ws.send(
+            JSON.stringify([
+              "REQ",
+              "nwc-resp",
+              { kinds: [23195], authors: [conn.walletPubkey], "#e": [event.id] },
+            ]),
+          );
+          ws.send(JSON.stringify(["EVENT", event]));
+        };
+        ws.onmessage = async (msg) => {
+          try {
+            const data = JSON.parse(msg.data);
+            if (data[0] === "OK" && data[1] === event.id && data[2] === false) {
+              finish(new Error("Relay rejected the request"));
+              return;
+            }
+            if (data[0] !== "EVENT" || data[1] !== "nwc-resp") return;
+            const plain = await NostrTools.nip04.decrypt(
+              secretBytes,
+              conn.walletPubkey,
+              data[2].content,
+            );
+            const body = JSON.parse(plain);
+            if (body.error) {
+              const err = new Error(
+                body.error.message || body.error.code || "Wallet error",
+              );
+              err.fromWallet = true;
+              finish(err);
+            } else {
+              finish(null, body.result);
+            }
+          } catch (err) {
+            finish(err);
+          }
+        };
+        ws.onerror = () => finish(new Error("Could not reach the wallet relay"));
+      } catch (err) {
+        finish(err);
+      }
+    })();
+  });
+}
+
+async function nwcPayInvoice(paymentRequest) {
+  const result = await nwcRequest("pay_invoice", { invoice: paymentRequest });
+  if (!result || !result.preimage) {
+    throw new Error("No payment preimage returned");
+  }
+  return result;
+}
+
+// Success = any decryptable NIP-47 response: even a wallet-side error proves
+// the relay is reachable and the keys match
+async function nwcTestConnection() {
+  try {
+    await nwcRequest("get_info", {}, 10000);
+    return true;
+  } catch (err) {
+    return err.fromWallet === true;
+  }
+}
+
 async function enableWebLN() {
   if (typeof WebLN === "undefined") {
     console.info("WebLN not available; QR payment will be used.");
@@ -1164,6 +1327,21 @@ async function handlePayment() {
   tipBtn.disabled = true;
 
   try {
+    // Connected NWC wallet first (optional feature) — on any failure fall
+    // through to the WebLN/QR flow exactly as before
+    if (getNwcConnection()) {
+      try {
+        const invoice = await generateInvoice(100);
+        await nwcPayInvoice(invoice);
+        sfx.payment();
+        showMessage("Paid from your connected wallet ⚡ Game unlocked");
+        tipBtn.disabled = false;
+        return true;
+      } catch (nwcErr) {
+        console.warn("NWC payment failed, falling back:", nwcErr);
+      }
+    }
+
     if (typeof WebLN !== "undefined") {
       try {
         const invoice = await generateInvoice(100);
@@ -1372,7 +1550,17 @@ async function attemptContinue(btn) {
   try {
     let paid = false;
 
-    if (typeof WebLN !== "undefined") {
+    if (getNwcConnection()) {
+      try {
+        const invoice = await generateInvoice(price);
+        await nwcPayInvoice(invoice);
+        paid = true;
+      } catch (nwcErr) {
+        console.warn("NWC continue failed, falling back:", nwcErr);
+      }
+    }
+
+    if (!paid && typeof WebLN !== "undefined") {
       try {
         const invoice = await generateInvoice(price);
         await payInvoice(invoice);
@@ -1822,6 +2010,67 @@ async function showLnurlQR(lightningAddress) {
   }
 }
 
+function nwcStatusRefresh() {
+  const statusEl = document.getElementById("wallet-status");
+  const connectBtn = document.getElementById("wallet-connect-btn");
+  const connected = !!getNwcConnection();
+  if (statusEl) {
+    statusEl.textContent = connected ? "Wallet connected ⚡ 1-tap payments on" : "";
+  }
+  if (connectBtn) {
+    connectBtn.textContent = connected ? "Manage wallet" : "🔌 Connect wallet";
+  }
+}
+
+function openNwcModal() {
+  const input = document.getElementById("nwc-input");
+  input.value = "";
+  document.getElementById("nwc-status").textContent = "";
+  document.getElementById("nwc-disconnect").style.display = getNwcConnection()
+    ? ""
+    : "none";
+  showModal("nwc-modal");
+}
+
+async function saveNwcConnection() {
+  const input = document.getElementById("nwc-input");
+  const statusEl = document.getElementById("nwc-status");
+  const saveBtn = document.getElementById("nwc-save");
+
+  try {
+    parseNwcUrl(input.value);
+  } catch (err) {
+    statusEl.textContent = `That doesn't look right: ${err.message}`;
+    return;
+  }
+
+  saveBtn.disabled = true;
+  statusEl.textContent = "Testing connection…";
+  localStorage.setItem(NWC_STORAGE_KEY, input.value.trim());
+
+  const ok = await nwcTestConnection();
+  saveBtn.disabled = false;
+
+  if (ok) {
+    input.value = ""; // don't leave the secret sitting in the DOM
+    statusEl.textContent = "";
+    nwcStatusRefresh();
+    closeModal("nwc-modal");
+    showMessage("Wallet connected ⚡ Payments are now 1-tap");
+  } else {
+    localStorage.removeItem(NWC_STORAGE_KEY);
+    statusEl.textContent =
+      "Couldn't reach your wallet — check the string and try again.";
+  }
+}
+
+function disconnectNwc() {
+  localStorage.removeItem(NWC_STORAGE_KEY);
+  nwcStatusRefresh();
+  closeModal("nwc-modal");
+  showMessage("Wallet disconnected");
+}
+
 // Resolves with the chosen amount in sats, or null if cancelled. Opening a
 // new ask cancels any pending one so a zap flow can never hang.
 let zapAmountResolve = null;
@@ -1881,7 +2130,20 @@ document.addEventListener("click", async (e) => {
     "Zapped to your profile on the leaderboard of Conways Game of Pacman!";
 
   try {
-    // Try WebLN first
+    // Connected NWC wallet first — lets phones zap without an extension
+    if (getNwcConnection()) {
+      try {
+        const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
+        await nwcPayInvoice(invoice);
+        await recordZap(pubkey, amount);
+        showMessage(`⚡ Zap of ${amount} sats sent!`);
+        return;
+      } catch (nwcErr) {
+        console.warn("NWC zap failed, trying WebLN:", nwcErr);
+      }
+    }
+
+    // Try WebLN next
     if (!window.webln) throw new Error("NO_WEBLN");
 
     await window.webln.enable();
@@ -1981,6 +2243,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     .getElementById("username-btn")
     .addEventListener("click", () => showModal("username-modal"));
 
+  document.getElementById("wallet-connect-btn").onclick = openNwcModal;
+  document.getElementById("qr-connect-link").onclick = openNwcModal;
+  document.getElementById("nwc-save").onclick = saveNwcConnection;
+  document.getElementById("nwc-disconnect").onclick = disconnectNwc;
+  nwcStatusRefresh();
+
   const muteBtn = document.getElementById("mute-btn");
   if (muteBtn) {
     const renderMuteState = () => {
@@ -2004,7 +2272,16 @@ document.getElementById("tip-btn").addEventListener("click", async () => {
 
   try {
     const invoiceTip = await generateInvoice(10000);
-    await payInvoice(invoiceTip);
+    let tipPaid = false;
+    if (getNwcConnection()) {
+      try {
+        await nwcPayInvoice(invoiceTip);
+        tipPaid = true;
+      } catch (nwcErr) {
+        console.warn("NWC tip failed, falling back to WebLN:", nwcErr);
+      }
+    }
+    if (!tipPaid) await payInvoice(invoiceTip);
     sfx.payment();
     showMessage("Thank you for the 10,000 sats tip 💛");
   } catch (err) {

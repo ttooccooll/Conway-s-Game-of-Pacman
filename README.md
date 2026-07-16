@@ -104,6 +104,10 @@ The game occasionally spawns gliders and spaceships from the corners to keep thi
   pictures from Nostr can't inject markup
 
 ### Lightning Integration
+- **Connect your wallet (NWC)**: paste a Nostr Wallet Connect string
+  (e.g. from Alby Hub) under stats → Connect wallet for 1-tap plays,
+  continues, and zaps — ideal on mobile. Optional; stored only in your
+  browser. Use a budgeted, pay-only connection.
 - **WebLN**: Browser extension payment support
 - **QR Code**: Manual invoice payment
 - **LNURL**: Zap other players directly

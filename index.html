@@ -133,6 +133,7 @@
         <p class="helpp">The arena wraps around: run off one edge and you appear on the opposite side. The ghosts and the walls know this trick too.</p>
         <p class="helpp">The game speeds up as your score climbs, and gliders show up more often the longer you survive. When you die, you can continue right where you fell — starting at 21 sats, doubling with each continue.</p>
         <p class="helpp">You get one free game per day. Additional games require Bitcoin Lightning payments. Don't get shocked! Too noisy? The 🔊 button up top mutes everything.</p>
+        <p class="helpp">Got an Alby Hub or another NWC wallet? Open stats → Connect wallet and paste your connection secret — plays, continues, and zaps become one tap. Totally optional: QR and extension payments keep working as always.</p>
         <p class="helpp">Login with ANYONE's npub. Just know, the zaps are real. They won't go to you if you use someone else's npub. Hey, maybe play as an organization that you want to support.</p>
         <p class="helpp">When it's all over, brag about it: share your final score straight to Nostr from the game-over screen (uses your browser extension, or copies the text if you don't have one).</p>
         <button onclick="closeModal('help-modal')">Got it!</button>
@@ -161,6 +162,8 @@
           </div>
         </div>
         <button id="tip-btn" style="display: none">Buy me coffee!</button>
+        <p id="wallet-status"></p>
+        <button id="wallet-connect-btn">🔌 Connect wallet</button>
         <button onclick="closeModal('stats-modal')">Close</button>
         <div id="leaderboard" class="leaderboard"></div>
       </div>
@@ -191,6 +194,7 @@
         <button id="copy-invoice-btn">Copy Invoice</button>
         <button id="close-qr-btn">Close (game will not begin)</button>
         <p id="qr-status">Waiting for payment...</p>
+        <button id="qr-connect-link">⚡ Tired of scanning? Connect a wallet for 1-tap payments</button>
       </div>
     </div>
 
@@ -220,6 +224,31 @@
         <p>Currently, only zaps via WebLN do this.</p>
         <p>This account will still recieve the sats though.</p>
         <button onclick="closeModal('lnurl-modal')">Close</button>
+      </div>
+    </div>
+
+    <div id="nwc-modal" class="modal">
+      <div class="modal-content">
+        <h3>🔌 Connect a wallet</h3>
+        <p class="helpp">Pay for games, continues, and zaps in one tap with Nostr Wallet Connect — works great with Alby Hub. Optional: QR and extension payments keep working like always.</p>
+        <ol class="helpp nwc-steps">
+          <li>In your Alby Hub: Connections → Add Connection</li>
+          <li>Give it a small budget (e.g. 1,000 sats/month)</li>
+          <li>Copy the connection secret and paste it here</li>
+        </ol>
+        <input
+          id="nwc-input"
+          type="password"
+          placeholder="nostr+walletconnect://…"
+          autocomplete="off"
+        />
+        <p id="nwc-status"></p>
+        <div>
+          <button id="nwc-save">Connect</button>
+          <button id="nwc-disconnect" style="display: none">Disconnect</button>
+          <button onclick="closeModal('nwc-modal')">Cancel</button>
+        </div>
+        <p class="continue-note">Your connection string never leaves this browser. Use a budgeted, pay-only connection.</p>
       </div>
     </div>
 

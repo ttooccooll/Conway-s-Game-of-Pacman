@@ -4,7 +4,9 @@
   "type": "module",
   "description": "Headless-browser verification suite for Conway's Game of Pacman",
   "dependencies": {
+    "nostr-tools": "^2.10.0",
     "puppeteer-core": "^23.11.1",
-    "serve-handler": "^6.1.6"
+    "serve-handler": "^6.1.6",
+    "ws": "^8.18.0"
   }
 }
