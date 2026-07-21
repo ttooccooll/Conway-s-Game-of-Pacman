@@ -24,7 +24,7 @@ const DIR_VECTORS = {
   right: { dx: 1, dy: 0 },
 };
 
-// Recent player positions, oldest first — the stalker ghost follows this trail
+// Recent player positions, oldest first - the stalker ghost follows this trail
 let playerTrail = [];
 const TRAIL_LENGTH = 10;
 
@@ -217,7 +217,7 @@ const sfx = (() => {
   };
 })();
 
-// Browsers only allow audio after a user gesture — unlock on the first one
+// Browsers only allow audio after a user gesture - unlock on the first one
 ["pointerdown", "keydown"].forEach((evt) =>
   document.addEventListener(evt, () => sfx.unlock(), { once: true }),
 );
@@ -581,7 +581,7 @@ function drawGhost(g) {
   const rightEyeX = x + size * 0.65;
   const eyeY = y + size * 0.45;
 
-  // Pupils look toward this ghost's current target — hints at its personality
+  // Pupils look toward this ghost's current target - hints at its personality
   const dx = Math.sign(toroidalDelta(g.x, g.targetX ?? playerX));
   const dy = Math.sign(toroidalDelta(g.y, g.targetY ?? playerY));
 
@@ -745,7 +745,7 @@ function moveGhosts() {
     const possibleMoves = directions.filter(
       (dir) => !grid[wrap(g.y + dir.dy)][wrap(g.x + dir.dx)],
     );
-    if (possibleMoves.length === 0) continue; // boxed in — stay put
+    if (possibleMoves.length === 0) continue; // boxed in - stay put
 
     let bestMove;
     if (Math.random() < g.randomness) {
@@ -802,7 +802,7 @@ function stepLife() {
     }
   }
 
-  // Restock whether dots were eaten or swallowed by walls — a strict
+  // Restock whether dots were eaten or swallowed by walls - a strict
   // equality check here once let the supply run dry permanently
   if (collectibles.filter((c) => !c.collected).length <= 10) {
     placeCollectibles(200);
@@ -831,13 +831,13 @@ function stepLife() {
 let gameOver = false;
 let activeTimeouts = [];
 let canPlayGame = false;
-// True once this run has been counted in stats — continues don't recount it
+// True once this run has been counted in stats - continues don't recount it
 let statsRecorded = false;
 // Set when a run was unlocked by the daily free game; the free game is only
 // marked used once the run actually starts (so a refresh doesn't consume it)
 let freeGameToMark = false;
 // A continue preserves score and board, so it always costs more than a
-// fresh 100-sat game and doubles within a run (121, 242, 484, …) — keeping
+// fresh 100-sat game and doubles within a run (121, 242, 484, ...) - keeping
 // a run alive is a premium and top leaderboard spots can't simply be bought
 let continuesUsed = 0;
 
@@ -1106,7 +1106,7 @@ async function startNewGame() {
   activeTimeouts.forEach(clearTimeout);
   activeTimeouts = [];
 
-  // A refresh mid-game keeps this session's unlocked credit — no double charge.
+  // A refresh mid-game keeps this session's unlocked credit - no double charge.
   // The credit is cleared at game over, so "Play again?" still goes through
   // the normal free-game/payment gate.
   const hasSessionCredit = sessionStorage.getItem("conpacCanPlay") === "true";
@@ -1328,7 +1328,7 @@ async function handlePayment() {
   tipBtn.disabled = true;
 
   try {
-    // Connected NWC wallet first (optional feature) — on any failure fall
+    // Connected NWC wallet first (optional feature) - on any failure fall
     // through to the WebLN/QR flow exactly as before
     if (getNwcConnection()) {
       try {
@@ -1397,7 +1397,7 @@ function showGameOver(reason = "", { recoverable = true } = {}) {
 
     const note = document.createElement("p");
     note.className = "continue-note";
-    note.textContent = "Keep your score and board — the ghosts scatter.";
+    note.textContent = "Keep your score and board - the ghosts scatter.";
     answerDiv.appendChild(note);
   }
 
@@ -1412,7 +1412,7 @@ function showGameOver(reason = "", { recoverable = true } = {}) {
 
 function buildShareText() {
   return (
-    `I scored ${getTotalScore()} in Conway's Game of Pacman — ` +
+    `I scored ${getTotalScore()} in Conway's Game of Pacman - ` +
     `survived ${generation} generations and grabbed ${score} fake bitcoin ` +
     `before the walls got me. Can you outlive the Game of Life? 👾\n\n` +
     GAME_URL
@@ -1486,7 +1486,7 @@ async function shareScoreToNostr(btn) {
 
   try {
     if (window.nostr) {
-      btn.textContent = "Signing…";
+      btn.textContent = "Signing...";
       const signed = await window.nostr.signEvent({
         kind: 1,
         created_at: Math.floor(Date.now() / 1000),
@@ -1498,7 +1498,7 @@ async function shareScoreToNostr(btn) {
         content: text,
       });
 
-      btn.textContent = "Publishing…";
+      btn.textContent = "Publishing...";
       const accepted = await publishToRelays(signed);
       if (accepted === 0) throw new Error("No relay accepted the note");
 
@@ -1508,10 +1508,10 @@ async function shareScoreToNostr(btn) {
       showMessage(
         `Score shared to Nostr (${accepted} relay${accepted === 1 ? "" : "s"}) 🟣`,
       );
-      return; // stays disabled — no accidental double posts
+      return; // stays disabled - no accidental double posts
     }
 
-    // No NIP-07 extension — the native share sheet reaches any app (this is
+    // No NIP-07 extension - the native share sheet reaches any app (this is
     // most phones), with clipboard as the last resort
     if (navigator.share) {
       try {
@@ -1522,7 +1522,7 @@ async function shareScoreToNostr(btn) {
         return;
       } catch (err) {
         if (err.name === "AbortError") {
-          // user closed the sheet — not an error, let them retry
+          // user closed the sheet - not an error, let them retry
           btn.disabled = false;
           btn.textContent = "🟣 Share on Nostr";
           return;
@@ -1534,7 +1534,7 @@ async function shareScoreToNostr(btn) {
     await copyTextToClipboard(text);
     btn.disabled = false;
     btn.textContent = "Copied 📋";
-    showMessage("No Nostr extension found — score copied. Paste it anywhere!");
+    showMessage("No Nostr extension found - score copied. Paste it anywhere!");
   } catch (err) {
     console.warn("Nostr share failed:", err);
     showError("Share failed or was cancelled.");
@@ -1546,7 +1546,7 @@ async function shareScoreToNostr(btn) {
 async function attemptContinue(btn) {
   const price = continuePrice();
   btn.disabled = true;
-  btn.textContent = "Creating invoice…";
+  btn.textContent = "Creating invoice...";
 
   try {
     let paid = false;
@@ -1573,7 +1573,7 @@ async function attemptContinue(btn) {
 
     if (!paid) {
       paid = await payWithQR(price);
-      // payWithQR's close button hides the game-over modal — bring it back
+      // payWithQR's close button hides the game-over modal - bring it back
       if (!paid) showModal("game-over-modal");
     }
 
@@ -1753,7 +1753,7 @@ function movePlayer(dx, dy, dir) {
   drawGrid();
 }
 
-// Profile pictures come from untrusted Nostr metadata — allow http(s) only
+// Profile pictures come from untrusted Nostr metadata - allow http(s) only
 function safeHttpUrl(url, fallback) {
   try {
     const parsed = new URL(url);
@@ -1772,7 +1772,7 @@ async function renderLeaderboard() {
   const currentUser = localStorage.getItem("conpacUsername");
 
   el.innerHTML = "<h3>🔥 Leaderboard 🔥</h3>";
-  el.innerHTML += "<p>Loading leaderboard… ⏳</p>";
+  el.innerHTML += "<p>Loading leaderboard... ⏳</p>";
 
   try {
     const resp = await fetch(
@@ -1800,7 +1800,7 @@ async function renderLeaderboard() {
     `;
 
     // Usernames, pictures, and lightning addresses come from arbitrary Nostr
-    // profiles — build with DOM APIs so nothing is ever parsed as HTML
+    // profiles - build with DOM APIs so nothing is ever parsed as HTML
     data.forEach((u, i) => {
       const row = document.createElement("div");
       row.className = "leaderboard-row";
@@ -2046,7 +2046,7 @@ async function saveNwcConnection() {
   }
 
   saveBtn.disabled = true;
-  statusEl.textContent = "Testing connection…";
+  statusEl.textContent = "Testing connection...";
   localStorage.setItem(NWC_STORAGE_KEY, input.value.trim());
 
   const ok = await nwcTestConnection();
@@ -2061,7 +2061,7 @@ async function saveNwcConnection() {
   } else {
     localStorage.removeItem(NWC_STORAGE_KEY);
     statusEl.textContent =
-      "Couldn't reach your wallet — check the string and try again.";
+      "Couldn't reach your wallet - check the string and try again.";
   }
 }
 
@@ -2131,7 +2131,7 @@ document.addEventListener("click", async (e) => {
     "Zapped to your profile on the leaderboard of Conways Game of Pacman!";
 
   try {
-    // Connected NWC wallet first — lets phones zap without an extension
+    // Connected NWC wallet first - lets phones zap without an extension
     if (getNwcConnection()) {
       try {
         const invoice = await fetchInvoiceFromLNURL(lnurl, amount, hardcodedMemo);
@@ -2293,7 +2293,7 @@ document.getElementById("tip-btn").addEventListener("click", async () => {
 });
 
 canvas.addEventListener("click", (e) => {
-  // Sandbox editing only when no scored run is active — pausing a paid game
+  // Sandbox editing only when no scored run is active - pausing a paid game
   // to erase the walls around you was a free win
   if (running || canPlayGame) return;
 
@@ -2510,7 +2510,7 @@ function getNostrUsername(profile, pubkey, npub = null) {
 
   // Fallback: short npub
   const n = npub || NostrTools.nip19.npubEncode(pubkey);
-  return n.slice(0, 8) + "…" + n.slice(-4);
+  return n.slice(0, 8) + "..." + n.slice(-4);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -2527,3 +2527,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.resetGame = startNewGame;
 window.closeModal = closeModal;
+
+// Modal buttons are wired here instead of inline onclick attributes so the CSP
+// can drop script-src 'unsafe-inline'. Runs after DOM parse (script is defer'd).
+document
+  .getElementById("help-got-it")
+  ?.addEventListener("click", () => closeModal("help-modal"));
+document
+  .getElementById("stats-close")
+  ?.addEventListener("click", () => closeModal("stats-modal"));
+document
+  .getElementById("play-again-btn")
+  ?.addEventListener("click", () => resetGame());
+document
+  .getElementById("username-close")
+  ?.addEventListener("click", () => closeModal("username-modal"));
+document
+  .getElementById("lnurl-close")
+  ?.addEventListener("click", () => closeModal("lnurl-modal"));
+document
+  .getElementById("nwc-cancel")
+  ?.addEventListener("click", () => closeModal("nwc-modal"));
