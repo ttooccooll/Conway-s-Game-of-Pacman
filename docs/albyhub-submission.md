@@ -12,7 +12,7 @@ Materials for submitting Conway's Game of Pacman to the Alby Hub store
 - [ ] Copy `docs/store/conpac.png` (200×200, 555 bytes) to
       `frontend/src/assets/suggested-apps/conpac.png`
 - [ ] Edit `frontend/src/components/connections/SuggestedAppData.tsx`
-      (import + entry below, both in alphabetical order — `conpac` sits
+      (import + entry below, both in alphabetical order - `conpac` sits
       between `clams` and `coracle`)
 - [ ] Open the PR
 
@@ -71,6 +71,6 @@ import conpac from "src/assets/suggested-apps/conpac.png";
 ## Notes
 
 - The connection only needs `pay_invoice` (a small monthly budget like
-  2,000 sats is plenty — a play is 100 sats, continues start at 121).
+  2,000 sats is plenty - a play is 100 sats, continues start at 121).
 - The game works without any connection (WebLN extension or QR); the NWC
   connection is the recommended path for mobile players.

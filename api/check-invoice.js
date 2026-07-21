@@ -27,9 +27,8 @@ export default async function handler(req, res) {
     if (err.code === "NOT_FOUND") {
       return res.status(404).json({ error: "Invoice not found" });
     }
-    return res
-      .status(500)
-      .json({ error: "NWC lookup failed", details: err.message });
+    console.error("check-invoice failed:", err);
+    return res.status(500).json({ error: "NWC lookup failed" });
   } finally {
     client?.close();
   }

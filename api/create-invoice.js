@@ -5,8 +5,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
 
   const { amount, memo } = req.body;
-  if (!amount || isNaN(amount))
-    return res.status(400).json({ error: "Amount must be a number" });
+  const sats = Number(amount);
+  if (!Number.isInteger(sats) || sats < 1 || sats > 100000000)
+    return res.status(400).json({
+      error: "Amount must be a whole number of sats between 1 and 100000000",
+    });
+
+  const description = String(memo || "Conpac Game Payment").slice(0, 128);
 
   if (!process.env.NWC_URL)
     return res.status(500).json({ error: "NWC_URL is not configured" });
@@ -19,8 +24,8 @@ export default async function handler(req, res) {
 
     const invoice = await client.makeInvoice({
       // NWC amounts are in millisats
-      amount: parseInt(amount) * 1000,
-      description: memo || "Conpac Game Payment",
+      amount: sats * 1000,
+      description,
     });
 
     return res.status(200).json({
@@ -30,7 +35,7 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error("Server exception:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Failed to create invoice" });
   } finally {
     client?.close();
   }

@@ -61,7 +61,7 @@ function findChrome() {
   );
   const found = candidates.find((c) => existsSync(c));
   if (!found) {
-    throw new Error("No Chrome/Chromium found — set CHROME_PATH");
+    throw new Error("No Chrome/Chromium found - set CHROME_PATH");
   }
   return found;
 }
@@ -101,7 +101,7 @@ try {
 
 const results = [];
 const check = (name, ok, detail = "") =>
-  results.push(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? " — " + detail : ""}`);
+  results.push(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? " - " + detail : ""}`);
 
 async function newGamePage(viewport) {
   const page = await browser.newPage();
@@ -158,7 +158,7 @@ check(
   JSON.stringify({ before, after }),
 );
 
-// toroidal wrap: player walks off the left edge (fresh state — the arrow
+// toroidal wrap: player walks off the left edge (fresh state - the arrow
 // phase can now legitimately end in death via ghost contact)
 const wrapTest = await page.evaluate(() => {
   canPlayGame = true;
@@ -358,7 +358,7 @@ check(
   JSON.stringify(reviveState),
 );
 
-// die again — played must NOT increment a second time
+// die again - played must NOT increment a second time
 const secondDeath = await page.evaluate(async () => {
   const playedBefore = JSON.parse(localStorage.getItem("conpacStats")).played;
   playerAlive = false;
@@ -571,7 +571,7 @@ check(
   JSON.stringify(nwcConnect),
 );
 
-// game unlock pays straight through the connected wallet — no QR modal
+// game unlock pays straight through the connected wallet - no QR modal
 const nwcPay = await page.evaluate(async () => {
   window.generateInvoice = async () => "lnbc210n1mockinvoice";
   const paid = await handlePayment();
@@ -659,7 +659,7 @@ const engine = await page.evaluate(() => {
   grid[10][11] = 1;
   grid[10][12] = 1; // horizontal blinker
   const p = evolveGrid();
-  drawGrid(); // no preview rendering — plain board must draw cleanly
+  drawGrid(); // no preview rendering - plain board must draw cleanly
   return {
     flipsVertical: p[9][11] === 1 && p[10][11] === 1 && p[11][11] === 1,
     endsGone: p[10][10] === 0 && p[10][12] === 0,
@@ -712,7 +712,7 @@ const credit = await page.evaluate(async () => {
   await startNewGame();
   const withCredit = canPlayGame;
   sessionStorage.removeItem("conpacCanPlay"); // brand-new visit, same day
-  // earlier tests stubbed payments to succeed — make them fail like a
+  // earlier tests stubbed payments to succeed - make them fail like a
   // declined/abandoned payment so the gate is actually exercised
   window.generateInvoice = async () => {
     throw new Error("stub: no backend");
