@@ -38,7 +38,7 @@ Score as high as possible before getting caught by:
 
 The arena is a torus: run off any edge and you reappear on the opposite side. The ghosts, the walls, and the gliders all wrap around too.
 
-Died? You can **continue right where you fell** — your score and board survive, the nearby walls clear, and the ghosts scatter. The first continue costs 21 sats and the price doubles each time (21, 42, 84, …), so leaderboard spots can't simply be bought.
+Died? You can **continue right where you fell** — your score and board survive, the nearby walls clear, and the ghosts scatter. Because a continue preserves your run, it costs more than a fresh game: 121 sats, doubling each time (121, 242, 484, …), so leaderboard spots can't simply be bought.
 
 ---
 
@@ -88,7 +88,8 @@ The game occasionally spawns gliders and spaceships from the corners to keep thi
 - 500 collectible bitcoin (dots)
 - Auto-replenishing collectibles (adds 200 more when 10 remain)
 - Pause/Resume/Reset controls
-- Continue after death for 21 sats (score and board preserved)
+- Continue after death (score and board preserved) — 121 sats, doubling
+  with each continue in a run
 - Retro synth sound effects with a mute toggle (persisted)
 
 ### User Accounts (Nostr)

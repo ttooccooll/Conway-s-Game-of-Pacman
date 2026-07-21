@@ -246,8 +246,8 @@ const goState = await page.evaluate(() => ({
   played: JSON.parse(localStorage.getItem("conpacStats")).played,
 }));
 check(
-  "death shows game-over modal with 21-sat continue",
-  goState.modalShown && goState.hasContinue && goState.btnText.includes("21 sats"),
+  "death shows game-over modal with 121-sat continue",
+  goState.modalShown && goState.hasContinue && goState.btnText === "⚡ Continue for 121 sats",
   JSON.stringify(goState),
 );
 await page.screenshot({ path: SHOTS + "/shot-gameover.png" });
@@ -372,13 +372,13 @@ check(
   JSON.stringify(secondDeath),
 );
 
-// continue price escalates within a run: 21 used above, so now 42
+// continue price escalates within a run: 121 used above, so now 242
 const price2 = await page.evaluate(
   () => document.getElementById("continue-btn")?.textContent,
 );
 check(
-  "continue price escalates after a continue (21 → 42)",
-  price2 === "⚡ Continue for 42 sats",
+  "continue price escalates after a continue (121 → 242)",
+  price2 === "⚡ Continue for 242 sats",
   String(price2),
 );
 

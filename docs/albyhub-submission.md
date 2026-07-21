@@ -71,6 +71,6 @@ import conpac from "src/assets/suggested-apps/conpac.png";
 ## Notes
 
 - The connection only needs `pay_invoice` (a small monthly budget like
-  1,000 sats is plenty — a play is 100 sats, continues start at 21).
+  2,000 sats is plenty — a play is 100 sats, continues start at 121).
 - The game works without any connection (WebLN extension or QR); the NWC
   connection is the recommended path for mobile players.

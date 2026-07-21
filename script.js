@@ -836,12 +836,13 @@ let statsRecorded = false;
 // Set when a run was unlocked by the daily free game; the free game is only
 // marked used once the run actually starts (so a refresh doesn't consume it)
 let freeGameToMark = false;
-// Continues get pricier within a run (21, 42, 84, …) so top leaderboard
-// spots can't simply be bought
+// A continue preserves score and board, so it always costs more than a
+// fresh 100-sat game and doubles within a run (121, 242, 484, …) — keeping
+// a run alive is a premium and top leaderboard spots can't simply be bought
 let continuesUsed = 0;
 
 function continuePrice() {
-  return 21 * 2 ** continuesUsed;
+  return 121 * 2 ** continuesUsed;
 }
 
 function getTotalScore() {
