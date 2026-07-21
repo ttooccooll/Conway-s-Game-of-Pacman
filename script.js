@@ -2018,7 +2018,7 @@ function nwcStatusRefresh() {
     statusEl.textContent = connected ? "Wallet connected ⚡ 1-tap payments on" : "";
   }
   if (connectBtn) {
-    connectBtn.textContent = connected ? "Manage wallet" : "🔌 Connect wallet";
+    connectBtn.textContent = connected ? "Manage wallet" : "Connect wallet";
   }
 }
 
