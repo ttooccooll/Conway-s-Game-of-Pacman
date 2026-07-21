@@ -1,6 +1,6 @@
 // In-process NWC wallet service + minimal Nostr relay for the test suite.
 // Rides the same HTTP server as the static files so the page reaches it at
-// ws://localhost:<port> — which the production CSP's connect-src 'self'
+// ws://localhost:<port> - which the production CSP's connect-src 'self'
 // already permits. Lets the suite exercise the game's real NIP-47 client
 // (encryption, signing, relay protocol) with zero external services.
 import { WebSocketServer } from "ws";

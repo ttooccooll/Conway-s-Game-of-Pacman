@@ -38,7 +38,7 @@ Score as high as possible before getting caught by:
 
 The arena is a torus: run off any edge and you reappear on the opposite side. The ghosts, the walls, and the gliders all wrap around too.
 
-Died? You can **continue right where you fell** — your score and board survive, the nearby walls clear, and the ghosts scatter. Because a continue preserves your run, it costs more than a fresh game: 121 sats, doubling each time (121, 242, 484, …), so leaderboard spots can't simply be bought.
+Died? You can **continue right where you fell** - your score and board survive, the nearby walls clear, and the ghosts scatter. Because a continue preserves your run, it costs more than a fresh game: 121 sats, doubling each time (121, 242, 484, ...), so leaderboard spots can't simply be bought.
 
 ---
 
@@ -88,7 +88,7 @@ The game occasionally spawns gliders and spaceships from the corners to keep thi
 - 500 collectible bitcoin (dots)
 - Auto-replenishing collectibles (adds 200 more when 10 remain)
 - Pause/Resume/Reset controls
-- Continue after death (score and board preserved) — 121 sats, doubling
+- Continue after death (score and board preserved) - 121 sats, doubling
   with each continue in a run
 - Retro synth sound effects with a mute toggle (persisted)
 
@@ -96,18 +96,18 @@ The game occasionally spawns gliders and spaceships from the corners to keep thi
 - Login with **any npub** (no password needed)
 - Profile fetched from Nostr relays (damus.io, snort.social, nostr.wine)
 - Username, avatar, and Lightning address support
-- **Share your score to Nostr** from the game-over screen — signs a note
+- **Share your score to Nostr** from the game-over screen - signs a note
   with your NIP-07 extension and publishes to the relays; without an
   extension it opens the native share sheet (mobile) or copies the text
 - Score submissions include a **NIP-98 auth event** when logged in with a
   Nostr extension, so the backend can verify who really posted a score
-- Leaderboard entries are rendered as plain text — profile names and
+- Leaderboard entries are rendered as plain text - profile names and
   pictures from Nostr can't inject markup
 
 ### Lightning Integration
 - **Connect your wallet (NWC)**: paste a Nostr Wallet Connect string
   (e.g. from Alby Hub) under stats → Connect wallet for 1-tap plays,
-  continues, and zaps — ideal on mobile. Optional; stored only in your
+  continues, and zaps - ideal on mobile. Optional; stored only in your
   browser. Use a budgeted, pay-only connection.
 - **WebLN**: Browser extension payment support
 - **QR Code**: Manual invoice payment
@@ -167,12 +167,12 @@ Lightning invoices are handled by the Vercel serverless functions in
 `api/`, which talk to an [AlbyHub](https://albyhub.com/) wallet over
 **NWC (Nostr Wallet Connect)** using `@getalby/sdk`:
 
-- `POST /api/create-invoice` — creates a Lightning invoice
-- `GET /api/check-invoice?paymentHash=` — checks payment status
+- `POST /api/create-invoice` - creates a Lightning invoice
+- `GET /api/check-invoice?paymentHash=` - checks payment status
 
 Configuration is a single environment variable:
 
-- `NWC_URL` — a `nostr+walletconnect://…` connection string from AlbyHub.
+- `NWC_URL` - a `nostr+walletconnect://...` connection string from AlbyHub.
   Grant it **receive-only permissions** (create + look up invoices) so it
   can't spend funds. Requires Node 22 (pinned via `engines`).
 
